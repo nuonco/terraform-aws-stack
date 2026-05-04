@@ -22,21 +22,9 @@ variable "runner_api_url" {
   description = "The URL of the Nuon runner API."
 }
 
-variable "runner_api_token" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "The API token used by the runner to authenticate with the Nuon runner API. Not needed when using init-mng-v2 (runner fetches its own token)."
-}
-
 variable "runner_id" {
   type        = string
   description = "The Nuon runner ID."
-}
-
-variable "runner_init_script_url" {
-  type        = string
-  description = "The URL of the runner initialization script."
 }
 
 variable "phone_home_url" {

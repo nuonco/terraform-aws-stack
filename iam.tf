@@ -67,11 +67,23 @@ data "aws_iam_policy_document" "runner_inline" {
   statement {
     sid = "RunnerCloudWatchLogs"
     actions = [
+      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents",
       "logs:DescribeLogStreams",
     ]
-    resources = ["arn:aws:logs:*:*:log-group:/nuon/${local.prefix}/*"]
+    resources = [
+      "arn:aws:logs:*:*:log-group:/nuon/${local.prefix}/*",
+      "arn:aws:logs:*:*:log-group:runner-*",
+      "arn:aws:logs:*:*:log-group:runner-*:*",
+    ]
+  }
+
+  # init-mng-v2.sh reads instance tags (nuon_runner_id, nuon_runner_api_url) via DescribeTags.
+  statement {
+    sid       = "RunnerDescribeTags"
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
   }
 }
 

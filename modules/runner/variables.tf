@@ -29,21 +29,9 @@ variable "runner_instance_profile_name" {
   description = "Name of the IAM instance profile attached to runner instances."
 }
 
-variable "runner_init_script_url" {
-  type        = string
-  description = "URL of the runner init script (curled by user_data)."
-}
-
 variable "runner_api_url" {
   type        = string
   description = "Nuon runner API URL."
-}
-
-variable "runner_api_token" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Runner API token (optional; runner can fetch its own with init-mng-v2)."
 }
 
 variable "runner_id" {

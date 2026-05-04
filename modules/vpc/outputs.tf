@@ -16,6 +16,14 @@ output "private_subnet_ids" {
 
 output "runner_subnet_id" {
   value = aws_subnet.runner.id
+
+  # Don't expose the runner subnet to consumers (i.e. the runner module)
+  # until egress is fully wired up: route table association implies the
+  # route table exists, which in turn implies the IGW or NAT GW is ready.
+  # Without this gate the runner ASG can launch an instance that boots
+  # before its default route is in place, and user_data fails to reach
+  # the internet on first run.
+  depends_on = [aws_route_table_association.runner]
 }
 
 output "runner_security_group_id" {
