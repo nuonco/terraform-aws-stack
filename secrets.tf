@@ -33,14 +33,20 @@ resource "aws_secretsmanager_secret_version" "auto_generate" {
 # Customer-provided secrets
 ###############################################################################
 
+# Skip secrets with empty values — AWS rejects empty payloads, and an optional
+# secret left unset shouldn't be created at all.
+locals {
+  customer_secret_keys = toset(nonsensitive([for k, v in var.secrets : k if v.value != ""]))
+}
+
 resource "aws_secretsmanager_secret" "customer" {
-  for_each = toset(nonsensitive(keys(var.secrets)))
+  for_each = local.customer_secret_keys
   name     = "${local.prefix}-${each.key}"
   tags     = local.tags
 }
 
 resource "aws_secretsmanager_secret_version" "customer" {
-  for_each      = toset(nonsensitive(keys(var.secrets)))
+  for_each      = local.customer_secret_keys
   secret_id     = aws_secretsmanager_secret.customer[each.key].id
   secret_string = var.secrets[each.key].value
 
