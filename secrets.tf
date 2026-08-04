@@ -54,3 +54,20 @@ resource "aws_secretsmanager_secret_version" "customer" {
     ignore_changes = [secret_string]
   }
 }
+
+###############################################################################
+# Runner audit export configuration
+###############################################################################
+
+resource "aws_secretsmanager_secret" "runner_audit_export" {
+  count                   = nonsensitive(var.runner_audit_export_config != "") ? 1 : 0
+  name                    = "nuon/${var.nuon_install_id}/runner-audit-export"
+  recovery_window_in_days = 0
+  tags                    = local.tags
+}
+
+resource "aws_secretsmanager_secret_version" "runner_audit_export" {
+  count         = nonsensitive(var.runner_audit_export_config != "") ? 1 : 0
+  secret_id     = aws_secretsmanager_secret.runner_audit_export[0].id
+  secret_string = var.runner_audit_export_config
+}

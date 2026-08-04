@@ -65,6 +65,17 @@ data "aws_iam_policy_document" "runner_inline" {
   }
 
   statement {
+    sid = "ReadAuditExportConfig"
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret",
+    ]
+    resources = [
+      "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:nuon/${local.prefix}/runner-audit-export-*",
+    ]
+  }
+
+  statement {
     sid = "RunnerCloudWatchLogs"
     actions = [
       "logs:CreateLogGroup",
