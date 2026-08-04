@@ -65,13 +65,13 @@ data "aws_iam_policy_document" "runner_inline" {
   }
 
   statement {
-    sid = "ReadAuditExportConfig"
+    sid = "ReadTelemetryExportConfig"
     actions = [
       "secretsmanager:GetSecretValue",
       "secretsmanager:DescribeSecret",
     ]
     resources = [
-      "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:nuon/${local.prefix}/runner-audit-export-*",
+      "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:nuon/${local.prefix}/telemetry-export-config-*",
     ]
   }
 

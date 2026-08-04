@@ -153,15 +153,15 @@ variable "secrets" {
   description = "Customer-provided secrets. Keys are secret names, values include the secret value to store in AWS Secrets Manager."
 }
 
-variable "runner_audit_export_config" {
+variable "telemetry_export_config" {
   type        = string
   default     = ""
   sensitive   = true
-  description = "Optional base64-encoded YAML configuration for the runner audit-log OTLP/HTTP exporter. Leave empty to disable."
+  description = "Optional base64-encoded YAML telemetry export configuration. The current release exports runner audit logs. Leave empty to disable."
 
   validation {
-    condition     = length(var.runner_audit_export_config) <= 4096
-    error_message = "The runner_audit_export_config value must not exceed 4096 characters."
+    condition     = length(var.telemetry_export_config) <= 4096
+    error_message = "The telemetry_export_config value must not exceed 4096 characters."
   }
 }
 

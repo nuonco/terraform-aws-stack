@@ -56,18 +56,18 @@ resource "aws_secretsmanager_secret_version" "customer" {
 }
 
 ###############################################################################
-# Runner audit export configuration
+# Telemetry export configuration
 ###############################################################################
 
-resource "aws_secretsmanager_secret" "runner_audit_export" {
-  count                   = nonsensitive(var.runner_audit_export_config != "") ? 1 : 0
-  name                    = "nuon/${var.nuon_install_id}/runner-audit-export"
+resource "aws_secretsmanager_secret" "telemetry_export_config" {
+  count                   = nonsensitive(var.telemetry_export_config != "") ? 1 : 0
+  name                    = "nuon/${var.nuon_install_id}/telemetry-export-config"
   recovery_window_in_days = 0
   tags                    = local.tags
 }
 
-resource "aws_secretsmanager_secret_version" "runner_audit_export" {
-  count         = nonsensitive(var.runner_audit_export_config != "") ? 1 : 0
-  secret_id     = aws_secretsmanager_secret.runner_audit_export[0].id
-  secret_string = var.runner_audit_export_config
+resource "aws_secretsmanager_secret_version" "telemetry_export_config" {
+  count         = nonsensitive(var.telemetry_export_config != "") ? 1 : 0
+  secret_id     = aws_secretsmanager_secret.telemetry_export_config[0].id
+  secret_string = var.telemetry_export_config
 }
