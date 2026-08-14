@@ -4,7 +4,7 @@ This is a Terraform module for provisioning Nuon install stacks in AWS. It is me
 
 For more information about Nuon stack templates, see the [Stack templates](../docs/stack-templates.md) doc.
 
-For more information about the Nuon runner, see the [Nuon runner requirements](../docs/runner-requirements.md) doc.
+For more information about the Nuon runner, see the [The Nuon runner](../docs/the-nuon-runner.md) doc.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ For more information about the Nuon runner, see the [Nuon runner requirements](.
 
 - **VPC & subnets** (`modules/vpc`) – A dedicated VPC with two public and two private subnets spread across 2 AZs, a single-AZ runner subnet, an Internet Gateway, and one NAT Gateway with an Elastic IP.
 - **Runner security group** (`modules/vpc`) – Outbound traffic open to `0.0.0.0/0`; inbound traffic allowed only from the security group itself.
-- **Runner** (`modules/runner`) – A launch template + Auto Scaling Group running the latest Amazon Linux 2023 AMI on a `t3.medium` (configurable) with a 30 GB gp3 root volume, IMDSv2 required, and no public IP. Plus a CloudWatch log group `/nuon/<install-id>/runner` (30-day retention).
+- **Runner** (`modules/runner`) – A launch template + Auto Scaling Group running the latest Amazon Linux 2023 AMI on a `t3.medium` (configurable via `runner_instance_type`) with a 30 GB gp3 root volume, IMDSv2 required, and no public IP. Plus a CloudWatch log group `/nuon/<install-id>/runner` (30-day retention).
 - **IAM** (`iam.tf`) –
   - **Runner instance role** + instance profile with a least-privilege inline policy, allowing it to assume the provided IAM roles, read its own secrets, write CloudWatch logs, and describe EC2 instance tags (the init script reads its config from instance tags).
   - **Operation roles**, trusted by the Nuon support roles and the runner. The runner assumes these per-job — it holds no standing workload permissions itself. Each is created only if the customer allows:
@@ -23,7 +23,7 @@ For more information about the Nuon runner, see the [Nuon runner requirements](.
     - **deprovision** – used by deprovision workflows
   - **Break-glass roles** – optional, created from a map keyed by role name and gated by `enabled = true`.
   - **Custom roles** – optional app-operation roles, same shape and gating as break-glass roles.
-- **Secrets** (`secrets.tf`) – AWS Secrets Manager entries named `<install-id>-<name>` for auto-generated secrets (63-char random values) and customer-provided secrets, plus an **empty** `nuon/<install-id>/telemetry-export-config` secret whose value the customer uploads out-of-band (see [Telemetry export](../docs/runner-requirements.md#telemetry-export-optional)).
+- **Secrets** (`secrets.tf`) – AWS Secrets Manager entries named `<install-id>-<name>` for auto-generated secrets (63-char random values) and customer-provided secrets, plus an **empty** `nuon/<install-id>/telemetry-export-config` secret whose value the customer uploads out-of-band (see [Telemetry export](../docs/the-nuon-runner.md#telemetry-export-optional)).
 - **Phone home** (`phone_home.tf`) – A `local-exec` provisioner that POSTs provisioning results (outputs, install inputs) back to Nuon on every apply.
 
 ## Network topology
@@ -40,7 +40,7 @@ For more information about the Nuon runner, see the [Nuon runner requirements](.
 - Subnets are tagged `network.nuon.co/domain` = `public` / `internal` / `runner` and `visibility` = `public` / `private`, so downstream components (e.g. EKS, load balancers) can discover them.
 - There is a **single NAT Gateway** in public subnet A. Both private subnets and the runner subnet share one private route table, so AZ-B traffic crosses AZs to reach the NAT and there is no NAT redundancy.
 - The VPC module gates its `runner_subnet_id` output on the runner route-table association, so the runner instance cannot boot before its default route to the NAT exists.
-- The runner requires no inbound connectivity; for the outbound destinations it must reach, see [Runner requirements → Network requirements](../docs/runner-requirements.md#network-requirements).
+- The runner requires no inbound connectivity; for the outbound destinations it must reach, see [The Nuon runner → Network requirements](../docs/the-nuon-runner.md#network-requirements).
 
 ## Authentication
 
@@ -50,7 +50,7 @@ The authentication process is as follows.
 
 1. User data sets `RUNNER_AUTH_METHOD=iid` on the instance.
 1. At boot, the runner reads its **signed instance identity document** from the instance metadata service (IMDS).
-1. The runner POSTs the IID, along with its `runner_id` (from the `nuon_runner_id` instance tag), to `POST /v1/runner-auth/aws-iid`.
+1. The runner POSTs the IID, along with its `runner_id` (from the `nuon_runner_id` instance tag), to `/v1/runner-auth/aws-iid`.
 1. The control plane verifies the document's signature against AWS's per-region certificates and checks that its account ID matches the account the stack phoned home from.
 1. The control plane mints a bearer token.
 1. The token is stored at `/opt/nuon/runner/token` (mode 0600) and sent as `Authorization: Bearer` on every subsequent API call.

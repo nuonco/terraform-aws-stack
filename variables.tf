@@ -153,6 +153,12 @@ variable "secrets" {
   description = "Customer-provided secrets. Keys are secret names, values include the secret value to store in AWS Secrets Manager."
 }
 
+variable "runner_instance_type" {
+  type        = string
+  default     = "t3.medium"
+  description = "EC2 instance type for the Nuon runner instance. Override with a larger type (e.g. t3.large) for installs with heavy build jobs."
+}
+
 ##
 ## Customer-supplied variables (prompted at apply time)
 ##
