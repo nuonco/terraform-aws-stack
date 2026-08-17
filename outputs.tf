@@ -35,11 +35,11 @@ output "runner_instance_profile" {
 }
 
 output "runner_asg_name" {
-  value = module.runner.asg_name
+  value = local.runner_asg_name
 }
 
 output "runner_log_group_name" {
-  value = module.runner.log_group_name
+  value = local.runner_log_group_name
 }
 
 output "provision_iam_role_arn" {
@@ -85,4 +85,9 @@ output "secret_arns" {
 # Convenience: not in the CFN payload, but useful for debugging.
 output "runner_security_group_id" {
   value = module.vpc.runner_security_group_id
+}
+
+# Convenience: not in the CFN payload, but useful for debugging.
+output "runner_enabled" {
+  value = var.runner_enabled
 }

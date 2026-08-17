@@ -153,6 +153,12 @@ variable "secrets" {
   description = "Customer-provided secrets. Keys are secret names, values include the secret value to store in AWS Secrets Manager."
 }
 
+variable "runner_enabled" {
+  type        = bool
+  default     = true
+  description = "Whether to provision the runner module (ASG, launch template, log group). Set to false to skip the runner and only create networking, IAM, and secrets."
+}
+
 variable "runner_instance_type" {
   type        = string
   default     = "t3.medium"

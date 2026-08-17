@@ -72,6 +72,10 @@ locals {
     )
   }
 
+  # These will be empty strings when the runner is disabled.
+  runner_asg_name       = var.runner_enabled ? module.runner[0].asg_name : ""
+  runner_log_group_name = var.runner_enabled ? module.runner[0].log_group_name : ""
+
   tags = {
     "install.nuon.co/id" = var.nuon_install_id
     "nuon_install_id"    = var.nuon_install_id

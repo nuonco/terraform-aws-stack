@@ -38,8 +38,8 @@ locals {
     runner_security_group_id = module.vpc.runner_security_group_id
     runner_iam_role_arn      = aws_iam_role.runner.arn
     runner_instance_profile  = aws_iam_instance_profile.runner.arn
-    runner_asg_name          = module.runner.asg_name
-    runner_log_group_name    = module.runner.log_group_name
+    runner_asg_name          = local.runner_asg_name
+    runner_log_group_name    = local.runner_log_group_name
     provision_iam_role_arn   = local.has_provision ? aws_iam_role.provision[0].arn : ""
     maintenance_iam_role_arn = local.has_maintenance ? aws_iam_role.maintenance[0].arn : ""
     deprovision_iam_role_arn = local.has_deprovision ? aws_iam_role.deprovision[0].arn : ""

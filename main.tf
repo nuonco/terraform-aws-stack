@@ -7,6 +7,7 @@ module "vpc" {
 
 module "runner" {
   source = "./modules/runner"
+  count  = var.runner_enabled ? 1 : 0
 
   prefix                       = local.prefix
   tags                         = local.tags
