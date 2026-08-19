@@ -47,6 +47,7 @@ locals {
     custom_role_arns         = local.custom_role_arns
     install_inputs           = var.install_inputs
     custom_nested_stacks     = {}
+    runner_enabled           = var.runner_enabled
   }, local.all_secret_arns)
 }
 

@@ -87,7 +87,6 @@ output "runner_security_group_id" {
   value = module.vpc.runner_security_group_id
 }
 
-# Convenience: not in the CFN payload, but useful for debugging.
 output "runner_enabled" {
   value = var.runner_enabled
 }
