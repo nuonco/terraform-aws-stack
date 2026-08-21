@@ -46,6 +46,6 @@ variable "nuon_install_id" {
 
 variable "instance_type" {
   type        = string
-  default     = "t3.medium"
-  description = "EC2 instance type for the runner."
+  default     = "t3a.medium"
+  description = "EC2 instance type for the runner. Defaults to t3a.medium to match ctl-api's DefaultAWSInstanceType."
 }
