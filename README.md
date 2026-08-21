@@ -1,14 +1,61 @@
-# AWS install stack template
+# terraform-aws-stack
 
-This is a Terraform module for provisioning Nuon install stacks in AWS. It is meant to be applied by a customer against their own AWS account. It provisions a dedicated VPC and an EC2 instance to host the Nuon runner. The runner polls the Nuon control plane for jobs and executes them locally using scoped IAM roles.
+Terraform module for provisioning a [Nuon](https://nuon.co) install stack in AWS. It is meant to be applied by a customer against their own AWS account. It provisions a dedicated VPC and an EC2 instance to host the Nuon runner. The runner polls the Nuon control plane for jobs and executes them locally using scoped IAM roles.
 
-For more information about Nuon stack templates, see the [Stack templates](../docs/stack-templates.md) doc.
+## Usage
 
-For more information about the Nuon runner, see the [The Nuon runner](../docs/the-nuon-runner.md) doc.
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "install_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 0.1"
+
+  aws_region      = "us-east-1"
+  nuon_install_id = var.nuon_install_id
+  nuon_org_id     = var.nuon_org_id
+  nuon_app_id     = var.nuon_app_id
+  runner_api_url  = var.runner_api_url
+  runner_id       = var.runner_id
+  phone_home_url  = var.phone_home_url
+
+  maintenance_permissions = ["ec2:Describe*"]
+}
+```
+
+See [`examples/`](./examples) for complete and minimal configurations.
+
+> [!IMPORTANT]
+> **This module does not configure the AWS provider.** You must declare and
+> configure an `aws` provider in your root module, and `var.aws_region` must
+> match its region — the module uses that value for its outputs, the phone-home
+> payload, and Secrets Manager ARN construction. A `check` block warns at plan
+> time if the two disagree.
+
+## Requirements
+
+| Name      | Version  |
+| --------- | -------- |
+| terraform | >= 1.5   |
+| aws       | >= 6.0   |
+| null      | >= 3.0   |
+| random    | >= 3.0   |
+
+The `aws` provider is constrained to `>= 6.0`; the module is not tested against 5.x.
+
+## Applying this module
+
+The phone-home step (below) shells out to `curl`, so whatever runs `terraform apply` must have `curl` on `PATH`. That rules out execution environments that provide no shell.
+
+For more information about Nuon stack templates, see the [Stacks](https://docs.nuon.co/concepts/stacks) doc.
+
+For more information about the Nuon runner, see the [Runners](https://docs.nuon.co/concepts/runners) doc.
 
 ## Architecture
 
-![AWS install stack architecture](docs/architecture.svg)
+![AWS install stack architecture](https://raw.githubusercontent.com/nuonco/terraform-aws-stack/main/docs/architecture.svg)
 
 ## Resources
 
@@ -23,8 +70,8 @@ For more information about the Nuon runner, see the [The Nuon runner](../docs/th
     - **deprovision** – used by deprovision workflows
   - **Break-glass roles** – optional, created from a map keyed by role name and gated by `enabled = true`.
   - **Custom roles** – optional app-operation roles, same shape and gating as break-glass roles.
-- **Secrets** (`secrets.tf`) – AWS Secrets Manager entries named `<install-id>-<name>` for auto-generated secrets (63-char random values) and customer-provided secrets, plus an **empty** `nuon/<install-id>/telemetry-export-config` secret whose value the customer uploads out-of-band (see [Telemetry export](../docs/the-nuon-runner.md#telemetry-export-optional)).
-- **Phone home** (`phone_home.tf`) – A `local-exec` provisioner that POSTs provisioning results (outputs, install inputs) back to Nuon on every apply.
+- **Secrets** (`secrets.tf`) – AWS Secrets Manager entries named `<install-id>-<name>` for auto-generated secrets (63-char random values) and customer-provided secrets, plus an **empty** `nuon/<install-id>/telemetry-export-config` secret whose value the customer uploads out-of-band (see [Runners](https://docs.nuon.co/concepts/runners)).
+- **Phone home** (`phone_home.tf`) – A `local-exec` provisioner that POSTs provisioning results (outputs, install inputs) back to Nuon on every apply. It is triggered by `timestamp()`, so `null_resource.phone_home` shows a change on **every** plan by design. This is expected, not drift — CI drift-detection jobs should filter it out.
 
 ## Network topology
 
@@ -40,7 +87,7 @@ For more information about the Nuon runner, see the [The Nuon runner](../docs/th
 - Subnets are tagged `network.nuon.co/domain` = `public` / `internal` / `runner` and `visibility` = `public` / `private`, so downstream components (e.g. EKS, load balancers) can discover them.
 - There is a **single NAT Gateway** in public subnet A. Both private subnets and the runner subnet share one private route table, so AZ-B traffic crosses AZs to reach the NAT and there is no NAT redundancy.
 - The VPC module gates its `runner_subnet_id` output on the runner route-table association, so the runner instance cannot boot before its default route to the NAT exists.
-- The runner requires no inbound connectivity; for the outbound destinations it must reach, see [The Nuon runner → Network requirements](../docs/the-nuon-runner.md#network-requirements).
+- The runner requires no inbound connectivity; for the outbound destinations it must reach, see [Runners](https://docs.nuon.co/concepts/runners).
 
 ## Authentication
 
@@ -65,3 +112,7 @@ The auth flow (and the tag lookup that precedes it) depends on the instance meta
 - The launch template enforces **IMDSv2** (`http_tokens = required`); don't disable the metadata endpoint on the instance.
 - Host-level firewalls or proxy configuration must exclude `169.254.169.254`.
 - Containerized processes: this template runs the container with `--network host`, so the default IMDSv2 hop limit of 1 works. If you run the runner on a bridge or overlay network instead, set `http_put_response_hop_limit = 2` — otherwise the IMDSv2 token response is dropped before it reaches the container's network namespace.
+
+## License
+
+[MIT](./LICENSE)
