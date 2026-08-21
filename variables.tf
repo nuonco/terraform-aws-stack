@@ -171,7 +171,13 @@ variable "runner_instance_type" {
 
 variable "aws_region" {
   type        = string
-  description = "The AWS region where Nuon runner infrastructure will be provisioned. The customer provides this value."
+  description = <<-EOT
+    The AWS region where Nuon runner infrastructure will be provisioned.
+
+    This module does not configure the AWS provider. This value MUST match the
+    region of the `aws` provider you pass in, and is used for the phone-home
+    payload, the `region` output, and Secrets Manager ARN construction.
+  EOT
 
   validation {
     condition = contains([

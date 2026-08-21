@@ -1,6 +1,5 @@
 locals {
   prefix = var.nuon_install_id
-  region = var.aws_region
 
   # Resolved inline policy documents — full JSON document takes precedence over
   # the permissions shorthand. Empty string means no inline policy on this role.
