@@ -2,7 +2,8 @@
 
 Networking, IAM, and secrets only — `runner_enabled = false` skips the runner.
 
-Note that the `aws` provider is configured **here**, not inside the module.
+Both the `aws` and `stack` providers are configured **here**, not inside the
+module.
 
 ```bash
 terraform init

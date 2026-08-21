@@ -6,19 +6,22 @@ terraform {
       source  = "hashicorp/aws"
       version = ">= 6.0"
     }
+    stack = {
+      source  = "nuonco/stack"
+      version = ">= 0.3.0"
+    }
   }
 }
 
-# The module deliberately declares no provider of its own, so configuring it is
-# the caller's job. `default_tags` here is optional — the module already tags
-# every taggable resource it creates with the install ID.
+# The module declares no providers of its own, so configuring both is the
+# caller's job.
+#
+# The aws region must match the region the Nuon control plane has recorded for
+# this install — the module's `check` block verifies this at plan time.
 provider "aws" {
   region = var.aws_region
+}
 
-  default_tags {
-    tags = {
-      "install.nuon.co/id" = var.nuon_install_id
-      "nuon_install_id"    = var.nuon_install_id
-    }
-  }
+provider "stack" {
+  api_url = var.api_url
 }

@@ -1,9 +1,11 @@
 # Complete example
 
-Provisions the full install stack: VPC, runner ASG, all three operation roles,
-a break-glass role, a custom app-operation role, and secrets.
+Provisions the full install stack: VPC, runner ASG, the operation roles the
+control plane has configured, and secrets.
 
-Note that the `aws` provider is configured **here**, not inside the module.
+Both the `aws` and `stack` providers are configured **here**, not inside the
+module. `var.aws_region` must match the region Nuon recorded for this install;
+the module warns at plan time if it does not.
 
 ```bash
 terraform init

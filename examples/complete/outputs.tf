@@ -2,6 +2,10 @@ output "account_id" {
   value = module.install_stack.account_id
 }
 
+output "region" {
+  value = module.install_stack.region
+}
+
 output "vpc_id" {
   value = module.install_stack.vpc_id
 }

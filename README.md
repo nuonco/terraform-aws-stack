@@ -9,39 +9,57 @@ provider "aws" {
   region = "us-east-1"
 }
 
+provider "stack" {
+  api_url = "https://runner.nuon.co"
+}
+
 module "install_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.1"
 
-  aws_region      = "us-east-1"
-  nuon_install_id = var.nuon_install_id
-  nuon_org_id     = var.nuon_org_id
-  nuon_app_id     = var.nuon_app_id
-  runner_api_url  = var.runner_api_url
-  runner_id       = var.runner_id
-  phone_home_url  = var.phone_home_url
-
-  maintenance_permissions = ["ec2:Describe*"]
+  phone_home_id = var.phone_home_id
 }
 ```
 
 See [`examples/`](./examples) for complete and minimal configurations.
 
+## Configuration
+
+This module reads its configuration from the Nuon control plane. Given a
+`phone_home_id`, the [`stack_config`](https://registry.terraform.io/providers/nuonco/stack/latest/docs/data-sources/config)
+data source supplies the install/org/app IDs, runner details, IAM permissions,
+operation roles, install inputs, and secret metadata. There is no tfvars-driven
+path — the control plane is the single source of truth.
+
+That leaves four inputs:
+
+| Name                   | Type          | Default | Description |
+| ---------------------- | ------------- | ------- | ----------- |
+| `phone_home_id`        | `string`      | —       | **Required.** Per-stack-version identifier issued by the control plane; the key used to fetch this install's configuration. |
+| `runner_enabled`       | `bool`        | `true`  | Set `false` to skip the runner and create only networking, IAM, and secrets. |
+| `runner_instance_type` | `string`      | `""`    | Overrides the machine type from the Nuon app runner config. Falls back to `t3a.medium`. |
+| `secrets`              | `map(object)` | `{}`    | Secret overrides keyed by name, layered over the data source. Use for values the control plane does not hold. |
+
 > [!IMPORTANT]
-> **This module does not configure the AWS provider.** You must declare and
-> configure an `aws` provider in your root module, and `var.aws_region` must
-> match its region — the module uses that value for its outputs, the phone-home
-> payload, and Secrets Manager ARN construction. A `check` block warns at plan
-> time if the two disagree.
+> **This module configures no providers.** You must declare and configure both
+> `aws` and `stack` in your root module. This is deliberate — a module that
+> declares its own providers cannot be used with `count`/`for_each` or with
+> aliased providers.
+>
+> The `aws` provider's region must match the region Nuon has recorded for this
+> install. The module cannot set it for you (a provider cannot be configured
+> from a data source inside the module), so a `check` block compares the two
+> and warns at plan time if they disagree.
 
 ## Requirements
 
-| Name      | Version  |
-| --------- | -------- |
-| terraform | >= 1.5   |
-| aws       | >= 6.0   |
-| null      | >= 3.0   |
-| random    | >= 3.0   |
+| Name          | Version   |
+| ------------- | --------- |
+| terraform     | >= 1.5    |
+| aws           | >= 6.0    |
+| null          | >= 3.0    |
+| random        | >= 3.0    |
+| nuonco/stack  | >= 0.3.0  |
 
 The `aws` provider is constrained to `>= 6.0`; the module is not tested against 5.x.
 
@@ -61,10 +79,10 @@ For more information about the Nuon runner, see the [Runners](https://docs.nuon.
 
 - **VPC & subnets** (`modules/vpc`) – A dedicated VPC with two public and two private subnets spread across 2 AZs, a single-AZ runner subnet, an Internet Gateway, and one NAT Gateway with an Elastic IP.
 - **Runner security group** (`modules/vpc`) – Outbound traffic open to `0.0.0.0/0`; inbound traffic allowed only from the security group itself.
-- **Runner** (`modules/runner`) – A launch template + Auto Scaling Group running the latest Amazon Linux 2023 AMI on a `t3.medium` (configurable via `runner_instance_type`) with a 30 GB gp3 root volume, IMDSv2 required, and no public IP. Plus a CloudWatch log group `/nuon/<install-id>/runner` (30-day retention). Set `runner_enabled = false` to skip this module.
+- **Runner** (`modules/runner`) – A launch template + Auto Scaling Group running the latest Amazon Linux 2023 AMI on a `t3a.medium` (from the Nuon app runner config, overridable via `runner_instance_type`) with a 30 GB gp3 root volume, IMDSv2 required, and no public IP. Plus a CloudWatch log group `/nuon/<install-id>/runner` (30-day retention). Set `runner_enabled = false` to skip this module.
 - **IAM** (`iam.tf`) –
   - **Runner instance role** + instance profile with a least-privilege inline policy, allowing it to assume the provided IAM roles, read its own secrets, write CloudWatch logs, and describe EC2 instance tags (the init script reads its config from instance tags).
-  - **Operation roles**, trusted by the Nuon support roles and the runner. The runner assumes these per-job — it holds no standing workload permissions itself. Each is created only if the customer allows:
+  - **Operation roles**, trusted by the Nuon support roles and the runner. The runner assumes these per-job — it holds no standing workload permissions itself. Each is created only when the control plane supplies permissions for it:
     - **provision** – used by provision workflows and secret syncs
     - **maintenance** – used by everything else (the default)
     - **deprovision** – used by deprovision workflows

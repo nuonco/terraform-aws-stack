@@ -8,16 +8,6 @@
 module "install_stack" {
   source = "../../"
 
-  aws_region                 = var.aws_region
-  nuon_install_id            = var.nuon_install_id
-  nuon_org_id                = var.nuon_org_id
-  nuon_app_id                = var.nuon_app_id
-  runner_api_url             = var.runner_api_url
-  runner_id                  = var.runner_id
-  phone_home_url             = var.phone_home_url
-  nuon_support_iam_role_arns = var.nuon_support_iam_role_arns
-
+  phone_home_id  = var.phone_home_id
   runner_enabled = false
-
-  maintenance_permissions = ["ec2:Describe*"]
 }
