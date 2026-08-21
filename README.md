@@ -131,6 +131,26 @@ The auth flow (and the tag lookup that precedes it) depends on the instance meta
 - Host-level firewalls or proxy configuration must exclude `169.254.169.254`.
 - Containerized processes: this template runs the container with `--network host`, so the default IMDSv2 hop limit of 1 works. If you run the runner on a bridge or overlay network instead, set `http_put_response_hop_limit = 2` — otherwise the IMDSv2 token response is dropped before it reaches the container's network namespace.
 
+## Releasing
+
+Tagging is automated. Every push to `main` runs the validate suite and, if it
+passes, computes the next semver tag from the conventional-commit messages
+since the last tag and pushes it:
+
+| Commit prefix        | Bump  |
+| -------------------- | ----- |
+| `feat:`              | minor |
+| `fix:`, anything else | patch |
+| `feat!:`, `BREAKING CHANGE` | major |
+
+The Terraform Registry ingests new tags via webhook, usually within a few
+minutes. There is nothing to build or upload — the registry reads the tag and
+the repo tree directly.
+
+Write commit messages accordingly; a mislabelled commit produces a mislabelled
+release, and a tag cannot be recalled once the registry has ingested it, only
+superseded.
+
 ## License
 
 [MIT](./LICENSE)
