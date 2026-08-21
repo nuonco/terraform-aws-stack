@@ -23,7 +23,7 @@ locals {
     request_type    = "Create"
     phone_home_type = "aws"
     account_id      = data.aws_caller_identity.current.account_id
-    region          = var.aws_region
+    region          = local.region
     vpc_id          = module.vpc.vpc_id
     # Subnet lists are emitted as comma-joined strings to match the CFN
     # phone-home Lambda payload (CFN stack outputs are strings, joined with
@@ -45,7 +45,7 @@ locals {
     deprovision_iam_role_arn = local.has_deprovision ? aws_iam_role.deprovision[0].arn : ""
     break_glass_role_arns    = local.break_glass_role_arns
     custom_role_arns         = local.custom_role_arns
-    install_inputs           = var.install_inputs
+    install_inputs           = local.install_inputs
     custom_nested_stacks     = {}
     runner_enabled           = var.runner_enabled
   }, local.all_secret_arns)
@@ -73,7 +73,7 @@ resource "null_resource" "phone_home" {
     command = <<-EOT
       curl -fS --http1.1 \
         --retry 5 --retry-all-errors --retry-delay 2 --max-time 30 \
-        -X POST '${var.phone_home_url}' \
+        -X POST '${local.phone_home_url}' \
         -H 'Content-Type: application/json' \
         -d '${jsonencode(local.phone_home_payload)}'
     EOT

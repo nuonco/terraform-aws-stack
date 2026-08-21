@@ -15,8 +15,8 @@ module "runner" {
   runner_subnet_id             = module.vpc.runner_subnet_id
   runner_security_group        = module.vpc.runner_security_group_id
   runner_instance_profile_name = aws_iam_instance_profile.runner.name
-  runner_api_url               = var.runner_api_url
-  runner_id                    = var.runner_id
-  nuon_install_id              = var.nuon_install_id
-  instance_type                = var.runner_instance_type
+  runner_api_url               = local.runner_api_url
+  runner_id                    = local.runner_id
+  nuon_install_id              = local.nuon_install_id
+  instance_type                = local.runner_machine_type
 }

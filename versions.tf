@@ -17,5 +17,9 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.0"
     }
+    stack = {
+      source  = "nuonco/stack"
+      version = ">= 0.3.0"
+    }
   }
 }

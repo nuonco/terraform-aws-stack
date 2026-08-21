@@ -7,7 +7,7 @@ output "account_id" {
 }
 
 output "region" {
-  value = var.aws_region
+  value = local.region
 }
 
 output "vpc_id" {
@@ -71,7 +71,7 @@ output "custom_nested_stacks" {
 }
 
 output "install_inputs" {
-  value       = var.install_inputs
+  value       = local.install_inputs
   description = "Customer-provided install inputs passed back to Nuon."
 }
 

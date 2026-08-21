@@ -1,48 +1,48 @@
 locals {
-  prefix = var.nuon_install_id
+  prefix = local.nuon_install_id
 
   # Resolved inline policy documents — full JSON document takes precedence over
   # the permissions shorthand. Empty string means no inline policy on this role.
   provision_inline_policy = (
-    var.provision_inline_policy_document != "" ? var.provision_inline_policy_document :
-    length(var.provision_permissions) > 0 ? jsonencode({
+    local.provision_inline_policy_document != "" ? local.provision_inline_policy_document :
+    length(local.provision_permissions) > 0 ? jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = var.provision_permissions
+        Action   = local.provision_permissions
         Resource = "*"
       }]
     }) : ""
   )
   maintenance_inline_policy = (
-    var.maintenance_inline_policy_document != "" ? var.maintenance_inline_policy_document :
-    length(var.maintenance_permissions) > 0 ? jsonencode({
+    local.maintenance_inline_policy_document != "" ? local.maintenance_inline_policy_document :
+    length(local.maintenance_permissions) > 0 ? jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = var.maintenance_permissions
+        Action   = local.maintenance_permissions
         Resource = "*"
       }]
     }) : ""
   )
   deprovision_inline_policy = (
-    var.deprovision_inline_policy_document != "" ? var.deprovision_inline_policy_document :
-    length(var.deprovision_permissions) > 0 ? jsonencode({
+    local.deprovision_inline_policy_document != "" ? local.deprovision_inline_policy_document :
+    length(local.deprovision_permissions) > 0 ? jsonencode({
       Version = "2012-10-17"
       Statement = [{
         Effect   = "Allow"
-        Action   = var.deprovision_permissions
+        Action   = local.deprovision_permissions
         Resource = "*"
       }]
     }) : ""
   )
 
-  has_provision   = local.provision_inline_policy != "" || length(var.provision_managed_policy_arns) > 0
-  has_maintenance = local.maintenance_inline_policy != "" || length(var.maintenance_managed_policy_arns) > 0
-  has_deprovision = local.deprovision_inline_policy != "" || length(var.deprovision_managed_policy_arns) > 0
+  has_provision   = local.provision_inline_policy != "" || length(local.provision_managed_policy_arns) > 0
+  has_maintenance = local.maintenance_inline_policy != "" || length(local.maintenance_managed_policy_arns) > 0
+  has_deprovision = local.deprovision_inline_policy != "" || length(local.deprovision_managed_policy_arns) > 0
 
-  enabled_break_glass_roles = { for k, v in var.break_glass_roles : k => v if v.enabled }
-  enabled_custom_roles      = { for k, v in var.custom_roles : k => v if v.enabled }
+  enabled_break_glass_roles = { for k, v in local.break_glass_roles : k => v if v.enabled }
+  enabled_custom_roles      = { for k, v in local.custom_roles : k => v if v.enabled }
 
   break_glass_inline_policies = {
     for k, v in local.enabled_break_glass_roles : k => (
@@ -76,7 +76,7 @@ locals {
   runner_log_group_name = var.runner_enabled ? module.runner[0].log_group_name : ""
 
   tags = {
-    "install.nuon.co/id" = var.nuon_install_id
-    "nuon_install_id"    = var.nuon_install_id
+    "install.nuon.co/id" = local.nuon_install_id
+    "nuon_install_id"    = local.nuon_install_id
   }
 }

@@ -1,0 +1,75 @@
+##
+## Nuon control-plane configuration.
+##
+## Runner details, IAM permissions, roles, install inputs, and secret metadata
+## are read from the Nuon API via the stack_config data source, keyed by
+## phone_home_id. This module has no tfvars-driven path — the control plane is
+## the single source of truth.
+##
+## Non-secret values are read by indexing data.stack_config.this DIRECTLY —
+## never via one()/try() over the whole object. Routing the object through a
+## function collapses the sensitivity mark from the `secrets` attribute onto
+## every sibling value, which would make unrelated outputs sensitive.
+##
+
+data "stack_config" "this" {
+  phone_home_id = var.phone_home_id
+}
+
+locals {
+  # identifiers
+  nuon_install_id = data.stack_config.this.install_id
+  nuon_org_id     = data.stack_config.this.org_id
+  nuon_app_id     = data.stack_config.this.app_id
+
+  # runner
+  runner_id      = data.stack_config.this.runner_id
+  runner_api_url = data.stack_config.this.runner_api_url
+  phone_home_url = data.stack_config.this.phone_home_url
+
+  region = data.stack_config.this.aws.region
+
+  # Caller override wins; then the Nuon app runner config; then the platform
+  # default, which also covers a ctl-api that does not yet serve the field.
+  runner_machine_type = (
+    var.runner_instance_type != "" ? var.runner_instance_type :
+    data.stack_config.this.aws.runner_machine_type != "" ? data.stack_config.this.aws.runner_machine_type :
+    "t3a.medium"
+  )
+
+  # control-plane accounts allowed to assume the operation roles
+  nuon_support_iam_role_arns = data.stack_config.this.aws.nuon_support_iam_role_arns
+
+  # operation-role permissions
+  provision_permissions              = data.stack_config.this.aws.provision_permissions
+  provision_inline_policy_document   = data.stack_config.this.aws.provision_inline_policy_document
+  provision_managed_policy_arns      = data.stack_config.this.aws.provision_managed_policy_arns
+  maintenance_permissions            = data.stack_config.this.aws.maintenance_permissions
+  maintenance_inline_policy_document = data.stack_config.this.aws.maintenance_inline_policy_document
+  maintenance_managed_policy_arns    = data.stack_config.this.aws.maintenance_managed_policy_arns
+  deprovision_permissions            = data.stack_config.this.aws.deprovision_permissions
+  deprovision_inline_policy_document = data.stack_config.this.aws.deprovision_inline_policy_document
+  deprovision_managed_policy_arns    = data.stack_config.this.aws.deprovision_managed_policy_arns
+
+  break_glass_roles = data.stack_config.this.aws.break_glass_roles
+  custom_roles      = data.stack_config.this.aws.custom_roles
+
+  # inputs and secrets
+  auto_generate_secrets = data.stack_config.this.auto_generate_secrets
+  install_inputs        = data.stack_config.this.install_inputs
+
+  # Secret values supplied via var.secrets win over the data source. The marks
+  # that try() collapses here are all genuinely sensitive, so the collapse is
+  # correct in this block specifically.
+  secret_names = toset(concat(
+    keys(nonsensitive(data.stack_config.this.secrets)),
+    keys(nonsensitive(var.secrets)),
+  ))
+  secrets = {
+    for k in local.secret_names : k => {
+      description = coalesce(try(var.secrets[k].description, null), try(data.stack_config.this.secrets[k].description, null), "")
+      required    = try(var.secrets[k].required, null) != null ? var.secrets[k].required : try(data.stack_config.this.secrets[k].required, false)
+      value       = try(var.secrets[k].value, "") != "" ? var.secrets[k].value : try(data.stack_config.this.secrets[k].value, "")
+    }
+  }
+}
