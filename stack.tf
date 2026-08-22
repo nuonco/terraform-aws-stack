@@ -3,8 +3,13 @@
 ##
 ## Runner details, IAM permissions, roles, install inputs, and secret metadata
 ## are read from the Nuon API via the stack_config data source, keyed by
-## phone_home_id. This module has no tfvars-driven path — the control plane is
+## install_id. This module has no tfvars-driven path — the control plane is
 ## the single source of truth.
+##
+## The read is authenticated: configure the stack provider with an api_token,
+## or with org_id to exchange an ambient OIDC token in CI. The phone-home URL
+## comes back in the response, so no per-stack-version secret is ever passed in
+## as a variable.
 ##
 ## Non-secret values are read by indexing data.stack_config.this DIRECTLY —
 ## never via one()/try() over the whole object. Routing the object through a
@@ -13,7 +18,7 @@
 ##
 
 data "stack_config" "this" {
-  phone_home_id = var.phone_home_id
+  install_id = var.install_id
 }
 
 locals {

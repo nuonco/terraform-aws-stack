@@ -8,7 +8,7 @@ terraform {
     }
     stack = {
       source  = "nuonco/stack"
-      version = ">= 0.3.0"
+      version = ">= 0.4.0"
     }
   }
 }
@@ -22,6 +22,10 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Credentials: api_token, else NUON_API_TOKEN, else an ambient OIDC token
+# exchanged for a short-lived one (which is what org_id is for).
 provider "stack" {
-  api_url = var.api_url
+  api_url   = var.api_url
+  api_token = var.api_token
+  org_id    = var.org_id
 }

@@ -20,11 +20,9 @@ locals {
   # so app templates referencing `nuon.install_stack.outputs.*` resolve
   # identically whether the customer applied via CFN or Terraform.
   phone_home_payload = merge({
-    request_type    = "Create"
-    phone_home_type = "aws"
-    account_id      = data.aws_caller_identity.current.account_id
-    region          = local.region
-    vpc_id          = module.vpc.vpc_id
+    account_id = data.aws_caller_identity.current.account_id
+    region     = local.region
+    vpc_id     = module.vpc.vpc_id
     # Subnet lists are emitted as comma-joined strings to match the CFN
     # phone-home Lambda payload (CFN stack outputs are strings, joined with
     # `Fn::Join`). ctl-api's `updateinstallstackoutputs` decoder uses
@@ -51,7 +49,19 @@ locals {
   }, local.all_secret_arns)
 }
 
-resource "null_resource" "phone_home" {
+# Reported through the stack provider rather than a local-exec curl. Two reasons:
+# the request now carries an Authorization header, and a token on a curl command
+# line would be visible in process arguments and Terraform's log output; and the
+# provider owns retries and error reporting instead of shelling out.
+#
+# phone_home_url comes from the config data source — it embeds a per-stack-version
+# identifier the caller has no other way to know, which is what lets this module
+# take install_id alone.
+#
+# The resource lifecycle drives request_type: Create on first apply, Update when
+# the payload changes, Delete on destroy. That replaces the always_run timestamp
+# trigger, which forced a report on every apply whether or not anything moved.
+resource "stack_phone_home" "this" {
   depends_on = [
     module.vpc,
     module.runner,
@@ -65,17 +75,9 @@ resource "null_resource" "phone_home" {
     aws_secretsmanager_secret_version.customer,
   ]
 
-  triggers = {
-    always_run = timestamp()
-  }
+  install_id      = local.nuon_install_id
+  phone_home_url  = local.phone_home_url
+  phone_home_type = "aws"
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      curl -fS --http1.1 \
-        --retry 5 --retry-all-errors --retry-delay 2 --max-time 30 \
-        -X POST '${local.phone_home_url}' \
-        -H 'Content-Type: application/json' \
-        -d '${jsonencode(local.phone_home_payload)}'
-    EOT
-  }
+  payload = jsonencode(local.phone_home_payload)
 }
