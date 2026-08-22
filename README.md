@@ -10,32 +10,57 @@ provider "aws" {
 }
 
 provider "stack" {
-  api_url = "https://runner.nuon.co"
+  api_url   = "https://runner.nuon.co"
+  api_token = var.api_token
 }
 
 module "install_stack" {
   source  = "nuonco/stack/aws"
-  version = "~> 0.1"
+  version = "~> 0.2"
 
-  phone_home_id = var.phone_home_id
+  install_id = var.install_id
 }
 ```
 
-See [`examples/`](./examples) for complete and minimal configurations.
+See [`examples/`](./examples) for minimal, complete, and no-runner
+configurations.
+
+## Authentication
+
+The `stack` provider authenticates against the Nuon API, resolving credentials
+the same way the `nuon` CLI does:
+
+1. the provider's `api_token` argument
+2. `NUON_API_TOKEN`
+3. an ambient OIDC token, exchanged for a short-lived one
+
+Prefer the third in CI — GitHub Actions mints an ID token per run
+(`permissions: id-token: write`), so nothing long-lived is stored. It needs
+`org_id` (or `NUON_ORG_ID`), because the exchange has to name the org whose
+trust policies apply:
+
+```hcl
+provider "stack" {
+  org_id = var.org_id
+}
+```
+
+`install_id` is an identifier, not a credential.
 
 ## Configuration
 
-This module reads its configuration from the Nuon control plane. Given a
-`phone_home_id`, the [`stack_config`](https://registry.terraform.io/providers/nuonco/stack/latest/docs/data-sources/config)
-data source supplies the install/org/app IDs, runner details, IAM permissions,
-operation roles, install inputs, and secret metadata. There is no tfvars-driven
-path — the control plane is the single source of truth.
+This module reads its configuration from the Nuon control plane. Given an
+`install_id`, the [`stack_config`](https://registry.terraform.io/providers/nuonco/stack/latest/docs/data-sources/config)
+data source supplies the org/app IDs, runner details, IAM permissions,
+operation roles, install inputs, secret metadata, and the phone-home URL the
+module reports completion to. There is no tfvars-driven path — the control
+plane is the single source of truth.
 
 That leaves four inputs:
 
 | Name                   | Type          | Default | Description |
 | ---------------------- | ------------- | ------- | ----------- |
-| `phone_home_id`        | `string`      | —       | **Required.** Per-stack-version identifier issued by the control plane; the key used to fetch this install's configuration. |
+| `install_id`           | `string`      | —       | **Required.** Nuon install ID; identifies which install's configuration to fetch. Not a credential. |
 | `runner_enabled`       | `bool`        | `true`  | Set `false` to skip the runner and create only networking, IAM, and secrets. |
 | `runner_instance_type` | `string`      | `""`    | Overrides the machine type from the Nuon app runner config. Falls back to `t3a.medium`. |
 | `secrets`              | `map(object)` | `{}`    | Secret overrides keyed by name, layered over the data source. Use for values the control plane does not hold. |

@@ -6,13 +6,13 @@
 ## come from the API, or are deliberate caller-side overrides.
 ##
 
-variable "phone_home_id" {
+variable "install_id" {
   type        = string
-  description = "Per-stack-version identifier issued by the Nuon control plane. Used by the stack_config data source to fetch this install's configuration."
+  description = "Nuon install ID. Identifies which install's configuration to read; not a credential — the stack provider's api_token authorizes the read."
 
   validation {
-    condition     = var.phone_home_id != ""
-    error_message = "phone_home_id must be set; it is the key used to fetch this install's configuration."
+    condition     = var.install_id != ""
+    error_message = "install_id must be set; it identifies which install's configuration to fetch."
   }
 }
 
