@@ -8,7 +8,7 @@
 # Note this is not a working install on its own: the runner is what polls the
 # control plane and executes jobs. See examples/minimal for the normal case.
 
-module "install_stack" {
+module "aws_stack" {
   source = "../../"
 
   install_id     = var.install_id

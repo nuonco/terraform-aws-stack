@@ -14,7 +14,7 @@ provider "stack" {
   api_token = var.api_token
 }
 
-module "install_stack" {
+module "aws_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.2"
 

@@ -4,7 +4,7 @@
 # are all read from the Nuon control plane, keyed by install_id and authorized
 # by the stack provider's credentials.
 
-module "install_stack" {
+module "aws_stack" {
   source = "../../"
 
   install_id = var.install_id

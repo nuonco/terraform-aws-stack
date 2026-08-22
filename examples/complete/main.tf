@@ -4,7 +4,7 @@
 # IAM permissions, operation roles, install inputs, and the runner machine type
 # all come from the Nuon control plane, keyed by install_id.
 
-module "install_stack" {
+module "aws_stack" {
   source = "../../"
 
   install_id = var.install_id
