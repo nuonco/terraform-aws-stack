@@ -24,21 +24,22 @@ locals {
   # contract and IID auth flow. Do not version separately.
   runner_init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh"
 
-  # NAT GW + route table associations may not be ready when the instance
-  # boots. Wait for outbound HTTPS to the init script host before running it,
-  # so we don't burn the only user_data run on a transient connect timeout.
+  # A freshly created NAT GW can take minutes to pass traffic, and user_data
+  # runs exactly once — a failed download here leaves an inert instance the ASG
+  # never replaces. So the download itself retries until it succeeds, is written
+  # to a file before running (a failed `curl | bash` exits 0 without pipefail
+  # and looks like success), and a hard failure shuts the instance down so the
+  # ASG launches a fresh one instead of keeping a corpse.
   user_data = <<-EOT
     #!/bin/bash
-    set -e
+    set -euo pipefail
     export RUNNER_AUTH_METHOD=iid
-    for i in $(seq 1 30); do
-      if curl -fsS --max-time 5 -o /dev/null https://raw.githubusercontent.com; then
-        break
-      fi
-      echo "waiting for outbound egress... ($i/30)"
-      sleep 10
-    done
-    curl -fsSL ${local.runner_init_script_url} | bash
+    if ! curl -fsSL --retry 30 --retry-all-errors --retry-delay 10 --max-time 60 \
+        -o /tmp/nuon-runner-init.sh ${local.runner_init_script_url}; then
+      /sbin/shutdown -h now "unable to download runner init script; replacing instance"
+      exit 1
+    fi
+    bash /tmp/nuon-runner-init.sh
   EOT
 
   runner_tags = merge(var.tags, {
