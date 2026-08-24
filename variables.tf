@@ -48,5 +48,5 @@ variable "secrets" {
 variable "roles" {
   type        = map(bool)
   default     = {}
-  description = "Per-role enable/disable overrides keyed by role name. Applies to break-glass and custom roles; a value set here wins over the control plane's enabled flag. Keys must match roles the app declares; unknown keys fail the plan."
+  description = "Per-role enable/disable overrides. Break-glass and custom roles are keyed by role name — the full served name or the name without its leading <install-id>- prefix — and a value set here wins over the control plane's enabled flag. The reserved keys provision, maintenance, and deprovision disable an operation role; disabling one prevents Nuon from performing that operation on the install until it is re-enabled and applied. Unknown keys fail the plan."
 }

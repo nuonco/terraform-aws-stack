@@ -61,21 +61,39 @@ locals {
   # directions, so a caller can turn a role off or switch one on. If the same
   # name appears in both maps, the override applies to both. Unknown keys are
   # rejected at plan time by the precondition on stack_phone_home.this.
+  #
+  # Served role names double as the physical IAM role names, so vendors
+  # template the install ID into them (see iam.tf). Callers may key var.roles
+  # by the full name or by the short name with the leading "<install-id>-"
+  # trimmed; the full name wins if both are set.
+  role_name_prefix = "${var.install_id}-"
   break_glass_roles = {
     for k, v in data.stack_config.this.aws.break_glass_roles :
-    k => merge(v, { enabled = lookup(var.roles, k, v.enabled) })
+    k => merge(v, { enabled = lookup(var.roles, k, lookup(var.roles, trimprefix(k, local.role_name_prefix), v.enabled)) })
   }
   custom_roles = {
     for k, v in data.stack_config.this.aws.custom_roles :
-    k => merge(v, { enabled = lookup(var.roles, k, v.enabled) })
+    k => merge(v, { enabled = lookup(var.roles, k, lookup(var.roles, trimprefix(k, local.role_name_prefix), v.enabled)) })
   }
 
-  unknown_role_keys = setsubtract(
-    keys(var.roles),
-    setunion(
-      keys(data.stack_config.this.aws.break_glass_roles),
-      keys(data.stack_config.this.aws.custom_roles),
-    ),
+  # Reserved operation-role keys plus every served role name, in both full and
+  # prefix-trimmed forms.
+  known_role_keys = setunion(
+    toset(["provision", "maintenance", "deprovision"]),
+    keys(data.stack_config.this.aws.break_glass_roles),
+    keys(data.stack_config.this.aws.custom_roles),
+    toset([for k in keys(data.stack_config.this.aws.break_glass_roles) : trimprefix(k, local.role_name_prefix)]),
+    toset([for k in keys(data.stack_config.this.aws.custom_roles) : trimprefix(k, local.role_name_prefix)]),
+  )
+  unknown_role_keys = setsubtract(keys(var.roles), local.known_role_keys)
+
+  # What the precondition's error message displays: each role once, by its
+  # short name, plus the reserved operation keys. known_role_keys (both forms)
+  # remains the allowlist.
+  display_role_keys = setunion(
+    toset(["provision", "maintenance", "deprovision"]),
+    toset([for k in keys(data.stack_config.this.aws.break_glass_roles) : trimprefix(k, local.role_name_prefix)]),
+    toset([for k in keys(data.stack_config.this.aws.custom_roles) : trimprefix(k, local.role_name_prefix)]),
   )
 
   # inputs and secrets

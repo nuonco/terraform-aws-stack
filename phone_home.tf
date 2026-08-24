@@ -98,7 +98,7 @@ resource "stack_phone_home" "this" {
 
     precondition {
       condition     = length(local.unknown_role_keys) == 0
-      error_message = "var.roles contains keys that match no break-glass or custom role: ${join(", ", local.unknown_role_keys)}. Declared roles: ${join(", ", setunion(keys(data.stack_config.this.aws.break_glass_roles), keys(data.stack_config.this.aws.custom_roles)))}."
+      error_message = "var.roles contains keys that match no role: ${join(", ", local.unknown_role_keys)}. Valid keys: ${join(", ", local.display_role_keys)}."
     }
   }
 }
