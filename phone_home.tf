@@ -80,4 +80,20 @@ resource "stack_phone_home" "this" {
   phone_home_type = "aws"
 
   payload = jsonencode(local.phone_home_payload)
+
+  # The effective input values (control plane merged with var.inputs). The API
+  # persists these as the install's current inputs, which is what makes tfvars
+  # a way to set input values — distinct from `payload`, which records stack
+  # outputs.
+  inputs = local.install_inputs
+
+  # A hard precondition rather than a `check` block (which only warns, see
+  # checks.tf): a typo'd input name would otherwise be silently dropped by the
+  # API's own validation and the value never set.
+  lifecycle {
+    precondition {
+      condition     = length(local.unknown_input_keys) == 0
+      error_message = "var.inputs contains keys the app does not declare as customer-facing inputs: ${join(", ", local.unknown_input_keys)}. Declared inputs: ${join(", ", keys(data.stack_config.this.install_inputs))}."
+    }
+  }
 }

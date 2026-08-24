@@ -61,7 +61,18 @@ locals {
 
   # inputs and secrets
   auto_generate_secrets = data.stack_config.this.auto_generate_secrets
-  install_inputs        = data.stack_config.this.install_inputs
+
+  # The control plane serves the current value of every customer-facing input;
+  # var.inputs is the caller's override and wins. The merged map is what the
+  # stack applies with, and phone home reports it back so it becomes the
+  # install's current inputs. Unknown keys are rejected at plan time by the
+  # precondition on stack_phone_home.this.
+  install_inputs = merge(
+    data.stack_config.this.install_inputs,
+    var.inputs,
+  )
+
+  unknown_input_keys = setsubtract(keys(var.inputs), keys(data.stack_config.this.install_inputs))
 
   # Secret values supplied via var.secrets win over the data source. The marks
   # that try() collapses here are all genuinely sensitive, so the collapse is
