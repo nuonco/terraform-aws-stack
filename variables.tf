@@ -44,3 +44,9 @@ variable "secrets" {
   sensitive   = true
   description = "Secret overrides keyed by name, layered over the stack_config data source. Any field set here wins. Use this to supply secret values the control plane does not hold."
 }
+
+variable "roles" {
+  type        = map(bool)
+  default     = {}
+  description = "Per-role enable/disable overrides keyed by role name. Applies to break-glass and custom roles; a value set here wins over the control plane's enabled flag. Keys must match roles the app declares; unknown keys fail the plan."
+}

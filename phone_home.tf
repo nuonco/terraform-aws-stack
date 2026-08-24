@@ -95,5 +95,10 @@ resource "stack_phone_home" "this" {
       condition     = length(local.unknown_input_keys) == 0
       error_message = "var.inputs contains keys the app does not declare as customer-facing inputs: ${join(", ", local.unknown_input_keys)}. Declared inputs: ${join(", ", keys(data.stack_config.this.install_inputs))}."
     }
+
+    precondition {
+      condition     = length(local.unknown_role_keys) == 0
+      error_message = "var.roles contains keys that match no break-glass or custom role: ${join(", ", local.unknown_role_keys)}. Declared roles: ${join(", ", setunion(keys(data.stack_config.this.aws.break_glass_roles), keys(data.stack_config.this.aws.custom_roles)))}."
+    }
   }
 }

@@ -64,6 +64,7 @@ That leaves four inputs:
 | `runner_enabled`       | `bool`        | `true`  | Set `false` to skip the runner and create only networking, IAM, and secrets. |
 | `runner_instance_type` | `string`      | `""`    | Overrides the machine type from the Nuon app runner config. Falls back to `t3a.medium`. |
 | `secrets`              | `map(object)` | `{}`    | Secret overrides keyed by name, layered over the data source. Use for values the control plane does not hold. |
+| `roles`                | `map(bool)`   | `{}`    | Per-role enable/disable overrides keyed by role name, layered over the control plane's `enabled` flag. Unknown keys fail the plan. |
 
 > [!IMPORTANT]
 > **This module configures no providers.** You must declare and configure both

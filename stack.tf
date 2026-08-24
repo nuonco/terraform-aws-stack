@@ -56,8 +56,27 @@ locals {
   deprovision_inline_policy_document = data.stack_config.this.aws.deprovision_inline_policy_document
   deprovision_managed_policy_arns    = data.stack_config.this.aws.deprovision_managed_policy_arns
 
-  break_glass_roles = data.stack_config.this.aws.break_glass_roles
-  custom_roles      = data.stack_config.this.aws.custom_roles
+  # Roles as the control plane serves them, with var.roles layered on top:
+  # a value set there wins over the control plane's enabled flag in both
+  # directions, so a caller can turn a role off or switch one on. If the same
+  # name appears in both maps, the override applies to both. Unknown keys are
+  # rejected at plan time by the precondition on stack_phone_home.this.
+  break_glass_roles = {
+    for k, v in data.stack_config.this.aws.break_glass_roles :
+    k => merge(v, { enabled = lookup(var.roles, k, v.enabled) })
+  }
+  custom_roles = {
+    for k, v in data.stack_config.this.aws.custom_roles :
+    k => merge(v, { enabled = lookup(var.roles, k, v.enabled) })
+  }
+
+  unknown_role_keys = setsubtract(
+    keys(var.roles),
+    setunion(
+      keys(data.stack_config.this.aws.break_glass_roles),
+      keys(data.stack_config.this.aws.custom_roles),
+    ),
+  )
 
   # inputs and secrets
   auto_generate_secrets = data.stack_config.this.auto_generate_secrets
