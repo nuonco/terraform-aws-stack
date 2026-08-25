@@ -17,9 +17,11 @@ jobs:
           - "."
           - "modules/vpc"
           - "modules/runner"
-          - "examples/complete"
           - "examples/minimal"
-          - "examples/no-runner"
+          - "examples/byoc"
+          - "examples/disable-runner"
+          - "examples/minimal"
+          - "examples/toggle-roles"
     steps:
       - uses: actions/checkout@v4
 

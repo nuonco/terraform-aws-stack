@@ -17,4 +17,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-provider "stack" {}
+provider "stack" {
+  api_url   = var.api_url
+  api_token = var.api_token
+}

@@ -5,5 +5,5 @@ variable "aws_region" {
 
 variable "install_id" {
   type        = string
-  description = "ID of the Nuon install being provisioned."
+  description = "Nuon install ID. Identifies which install to configure; not a credential."
 }
