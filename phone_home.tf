@@ -102,6 +102,11 @@ resource "stack_phone_home" "this" {
     }
 
     precondition {
+      condition     = length(local.unknown_secret_keys) == 0
+      error_message = "var.secrets contains keys the app does not declare as customer-facing secrets: ${join(", ", local.unknown_secret_keys)}. Declared secrets: ${join(", ", keys(nonsensitive(data.stack_config.this.secrets)))}."
+    }
+
+    precondition {
       condition     = length(local.missing_required_secrets) == 0
       error_message = "the app requires a value for these secrets: ${join(", ", local.missing_required_secrets)}."
     }
