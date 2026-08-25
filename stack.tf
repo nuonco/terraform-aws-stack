@@ -3,8 +3,13 @@
 ##
 ## Runner details, IAM permissions, roles, install inputs, and secret metadata
 ## are read from the Nuon API via the stack_config data source, keyed by
-## phone_home_id. This module has no tfvars-driven path — the control plane is
+## install_id. This module has no tfvars-driven path — the control plane is
 ## the single source of truth.
+##
+## The read is authenticated: configure the stack provider with an api_token,
+## or with org_id to exchange an ambient OIDC token in CI. The phone-home URL
+## comes back in the response, so no per-stack-version secret is ever passed in
+## as a variable.
 ##
 ## Non-secret values are read by indexing data.stack_config.this DIRECTLY —
 ## never via one()/try() over the whole object. Routing the object through a
@@ -13,7 +18,7 @@
 ##
 
 data "stack_config" "this" {
-  phone_home_id = var.phone_home_id
+  install_id = var.install_id
 }
 
 locals {
@@ -51,12 +56,68 @@ locals {
   deprovision_inline_policy_document = data.stack_config.this.aws.deprovision_inline_policy_document
   deprovision_managed_policy_arns    = data.stack_config.this.aws.deprovision_managed_policy_arns
 
-  break_glass_roles = data.stack_config.this.aws.break_glass_roles
-  custom_roles      = data.stack_config.this.aws.custom_roles
+  # Roles as the control plane serves them, with var.roles layered on top:
+  # a value set there wins over the control plane's enabled flag in both
+  # directions, so a caller can turn a role off or switch one on. If the same
+  # name appears in both maps, the override applies to both. Unknown keys are
+  # rejected at plan time by the precondition on stack_phone_home.this.
+  #
+  # Served role names double as the physical IAM role names, so vendors
+  # template the install ID into them (see iam.tf). Callers may key var.roles
+  # by the full name or by the short name with the leading "<install-id>-"
+  # trimmed; the full name wins if both are set.
+  role_name_prefix = "${var.install_id}-"
+  break_glass_roles = {
+    for k, v in data.stack_config.this.aws.break_glass_roles :
+    k => merge(v, { enabled = lookup(var.roles, k, lookup(var.roles, trimprefix(k, local.role_name_prefix), v.enabled)) })
+  }
+  custom_roles = {
+    for k, v in data.stack_config.this.aws.custom_roles :
+    k => merge(v, { enabled = lookup(var.roles, k, lookup(var.roles, trimprefix(k, local.role_name_prefix), v.enabled)) })
+  }
+
+  # Reserved operation-role keys plus every served role name, in both full and
+  # prefix-trimmed forms.
+  known_role_keys = setunion(
+    toset(["provision", "maintenance", "deprovision"]),
+    keys(data.stack_config.this.aws.break_glass_roles),
+    keys(data.stack_config.this.aws.custom_roles),
+    toset([for k in keys(data.stack_config.this.aws.break_glass_roles) : trimprefix(k, local.role_name_prefix)]),
+    toset([for k in keys(data.stack_config.this.aws.custom_roles) : trimprefix(k, local.role_name_prefix)]),
+  )
+  unknown_role_keys = setsubtract(keys(var.roles), local.known_role_keys)
+
+  # What the precondition's error message displays: each role once, by its
+  # short name, plus the reserved operation keys. known_role_keys (both forms)
+  # remains the allowlist.
+  display_role_keys = setunion(
+    toset(["provision", "maintenance", "deprovision"]),
+    toset([for k in keys(data.stack_config.this.aws.break_glass_roles) : trimprefix(k, local.role_name_prefix)]),
+    toset([for k in keys(data.stack_config.this.aws.custom_roles) : trimprefix(k, local.role_name_prefix)]),
+  )
 
   # inputs and secrets
   auto_generate_secrets = data.stack_config.this.auto_generate_secrets
-  install_inputs        = data.stack_config.this.install_inputs
+
+  # The control plane serves the current value of every customer-facing input;
+  # var.inputs is the caller's override and wins. The merged map is what the
+  # stack applies with, and phone home reports it back so it becomes the
+  # install's current inputs. Unknown keys are rejected at plan time by the
+  # precondition on stack_phone_home.this.
+  install_inputs = merge(
+    data.stack_config.this.install_inputs,
+    var.inputs,
+  )
+
+  unknown_input_keys = setsubtract(keys(var.inputs), keys(data.stack_config.this.install_inputs))
+
+  # Required inputs must resolve to a non-empty value after the merge. Caught
+  # here rather than downstream: an empty value would apply green, phone home,
+  # and only fail later in the vendor's component deploys.
+  missing_required_inputs = [
+    for k in data.stack_config.this.required_input_names :
+    k if lookup(local.install_inputs, k, "") == ""
+  ]
 
   # Secret values supplied via var.secrets win over the data source. The marks
   # that try() collapses here are all genuinely sensitive, so the collapse is
@@ -72,4 +133,12 @@ locals {
       value       = try(var.secrets[k].value, "") != "" ? var.secrets[k].value : try(data.stack_config.this.secrets[k].value, "")
     }
   }
+
+  # Required secrets must have a value: secrets.tf skips empty-valued secrets
+  # entirely (an optional secret left unset shouldn't exist), which without
+  # this check silently swallows a forgotten TF_VAR_ export for a required one.
+  # Names only, so the list is safe to surface in an error message.
+  missing_required_secrets = nonsensitive([
+    for k, v in local.secrets : k if v.required && v.value == ""
+  ])
 }

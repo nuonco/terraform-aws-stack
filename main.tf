@@ -9,6 +9,11 @@ module "runner" {
   source = "./modules/runner"
   count  = var.runner_enabled ? 1 : 0
 
+  # The instance needs egress the moment user_data runs, but the NAT gateway
+  # and the runner subnet's route association don't feed any output the runner
+  # module consumes, so nothing orders them ahead of the ASG implicitly.
+  depends_on = [module.vpc]
+
   prefix                       = local.prefix
   tags                         = local.tags
   vpc_id                       = module.vpc.vpc_id

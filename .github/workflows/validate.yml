@@ -19,6 +19,7 @@ jobs:
           - "modules/runner"
           - "examples/complete"
           - "examples/minimal"
+          - "examples/no-runner"
     steps:
       - uses: actions/checkout@v4
 

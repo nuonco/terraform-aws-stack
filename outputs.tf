@@ -72,7 +72,12 @@ output "custom_nested_stacks" {
 
 output "install_inputs" {
   value       = local.install_inputs
-  description = "Customer-provided install inputs passed back to Nuon."
+  description = "Effective customer-facing input values: control-plane values merged with var.inputs overrides, as reported back to Nuon."
+}
+
+output "sensitive_input_names" {
+  value       = data.stack_config.this.sensitive_input_names
+  description = "Names of inputs the app marks sensitive. The install_inputs map itself is not marked sensitive (Terraform maps are all-or-nothing); use this list to handle those values carefully downstream."
 }
 
 # Secrets — emitted individually as `<name>_arn` to match the flattened CFN

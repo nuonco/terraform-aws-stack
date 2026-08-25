@@ -1,6 +1,19 @@
-variable "phone_home_id" {
+variable "install_id" {
   type        = string
-  description = "Per-stack-version identifier issued by the Nuon control plane."
+  description = "Nuon install ID. Identifies which install to configure; not a credential."
+}
+
+variable "api_token" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Nuon API token, issued alongside the install. Leave empty to fall back to NUON_API_TOKEN, or to OIDC when org_id is set."
+}
+
+variable "org_id" {
+  type        = string
+  default     = ""
+  description = "Nuon organization ID. Required only when authenticating via OIDC instead of a token."
 }
 
 variable "aws_region" {

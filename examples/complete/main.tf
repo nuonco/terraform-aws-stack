@@ -2,12 +2,12 @@
 #
 # Networking, IAM roles, secrets, and the runner. Note how little is passed in:
 # IAM permissions, operation roles, install inputs, and the runner machine type
-# all come from the Nuon control plane, keyed by phone_home_id.
+# all come from the Nuon control plane, keyed by install_id.
 
-module "install_stack" {
+module "aws_stack" {
   source = "../../"
 
-  phone_home_id = var.phone_home_id
+  install_id = var.install_id
 
   # Optional: override the machine type from the Nuon app runner config.
   runner_instance_type = "t3.large"

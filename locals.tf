@@ -37,9 +37,13 @@ locals {
     }) : ""
   )
 
-  has_provision   = local.provision_inline_policy != "" || length(local.provision_managed_policy_arns) > 0
-  has_maintenance = local.maintenance_inline_policy != "" || length(local.maintenance_managed_policy_arns) > 0
-  has_deprovision = local.deprovision_inline_policy != "" || length(local.deprovision_managed_policy_arns) > 0
+  # The reserved var.roles keys "provision"/"maintenance"/"deprovision" let the
+  # caller disable an operation role. Effectively disable-only: enabling a role
+  # the app config grants no policies to would create an empty role, so the
+  # policy check still applies.
+  has_provision   = lookup(var.roles, "provision", true) && (local.provision_inline_policy != "" || length(local.provision_managed_policy_arns) > 0)
+  has_maintenance = lookup(var.roles, "maintenance", true) && (local.maintenance_inline_policy != "" || length(local.maintenance_managed_policy_arns) > 0)
+  has_deprovision = lookup(var.roles, "deprovision", true) && (local.deprovision_inline_policy != "" || length(local.deprovision_managed_policy_arns) > 0)
 
   enabled_break_glass_roles = { for k, v in local.break_glass_roles : k => v if v.enabled }
   enabled_custom_roles      = { for k, v in local.custom_roles : k => v if v.enabled }
