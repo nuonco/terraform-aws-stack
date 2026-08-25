@@ -102,6 +102,11 @@ resource "stack_phone_home" "this" {
     }
 
     precondition {
+      condition     = length(local.missing_required_secrets) == 0
+      error_message = "the app requires a value for these secrets: ${join(", ", local.missing_required_secrets)}."
+    }
+
+    precondition {
       condition     = length(local.unknown_role_keys) == 0
       error_message = "var.roles contains keys that match no role: ${join(", ", local.unknown_role_keys)}. Valid keys: ${join(", ", local.display_role_keys)}."
     }

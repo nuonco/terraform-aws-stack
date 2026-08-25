@@ -133,4 +133,12 @@ locals {
       value       = try(var.secrets[k].value, "") != "" ? var.secrets[k].value : try(data.stack_config.this.secrets[k].value, "")
     }
   }
+
+  # Required secrets must have a value: secrets.tf skips empty-valued secrets
+  # entirely (an optional secret left unset shouldn't exist), which without
+  # this check silently swallows a forgotten TF_VAR_ export for a required one.
+  # Names only, so the list is safe to surface in an error message.
+  missing_required_secrets = nonsensitive([
+    for k, v in local.secrets : k if v.required && v.value == ""
+  ])
 }

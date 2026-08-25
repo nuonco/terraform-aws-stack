@@ -42,7 +42,7 @@ variable "secrets" {
   }))
   default     = {}
   sensitive   = true
-  description = "Secret overrides keyed by name, layered over the stack_config data source. Any field set here wins. Use this to supply secret values the control plane does not hold."
+  description = "Secret overrides keyed by name, layered over the stack_config data source. Any field set here wins. Use this to supply secret values the control plane does not hold. A secret the app declares required fails the plan if it resolves to no value."
 }
 
 variable "roles" {
