@@ -56,13 +56,14 @@ operation roles, install inputs, secret metadata, and the phone-home URL the
 module reports completion to. There is no tfvars-driven path — the control
 plane is the single source of truth.
 
-That leaves four inputs:
+That leaves these inputs:
 
 | Name                   | Type          | Default | Description |
 | ---------------------- | ------------- | ------- | ----------- |
 | `install_id`           | `string`      | —       | **Required.** Nuon install ID; identifies which install's configuration to fetch. Not a credential. |
 | `runner_enabled`       | `bool`        | `true`  | Set `false` to skip the runner and create only networking, IAM, and secrets. |
 | `runner_instance_type` | `string`      | `""`    | Overrides the machine type from the Nuon app runner config. Falls back to `t3a.medium`. |
+| `inputs`               | `map(string)` | `{}`    | Customer-facing install input values keyed by name, layered over the control plane's current values — any value set here wins, and the merged result phones home to become the install's current inputs. Unknown keys fail the plan, as does a required input that resolves to no value. |
 | `secrets`              | `map(object)` | `{}`    | Secret overrides keyed by name, layered over the data source. Use for values the control plane does not hold. |
 | `roles`                | `map(bool)`   | `{}`    | Per-role enable/disable overrides, layered over the control plane's `enabled` flag. Keys are role names (full, or without the `<install-id>-` prefix) plus the reserved `provision`/`maintenance`/`deprovision` operation-role keys. Unknown keys fail the plan. |
 

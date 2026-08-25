@@ -31,7 +31,7 @@ variable "runner_instance_type" {
 variable "inputs" {
   type        = map(string)
   default     = {}
-  description = "Customer-facing install input values keyed by name. Layered over the values the Nuon control plane holds — any value set here wins — and reported back via phone home, where it becomes the install's current inputs. Keys must match inputs the app declares; unknown keys fail the plan."
+  description = "Customer-facing install input values keyed by name. Layered over the values the Nuon control plane holds — any value set here wins — and reported back via phone home, where it becomes the install's current inputs. Keys must match inputs the app declares; unknown keys fail the plan, as does a required input that resolves to no value."
 }
 
 variable "secrets" {

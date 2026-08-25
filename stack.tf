@@ -111,6 +111,14 @@ locals {
 
   unknown_input_keys = setsubtract(keys(var.inputs), keys(data.stack_config.this.install_inputs))
 
+  # Required inputs must resolve to a non-empty value after the merge. Caught
+  # here rather than downstream: an empty value would apply green, phone home,
+  # and only fail later in the vendor's component deploys.
+  missing_required_inputs = [
+    for k in data.stack_config.this.required_input_names :
+    k if lookup(local.install_inputs, k, "") == ""
+  ]
+
   # Secret values supplied via var.secrets win over the data source. The marks
   # that try() collapses here are all genuinely sensitive, so the collapse is
   # correct in this block specifically.
