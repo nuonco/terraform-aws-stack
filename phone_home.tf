@@ -16,6 +16,16 @@ locals {
   }
   all_secret_arns = merge(local.auto_generate_secret_arns, local.customer_secret_arns)
 
+  custom_stacks_outputs = length(aws_cloudformation_stack.custom) > 0 ? aws_cloudformation_stack.custom[0].outputs : {}
+  custom_nested_stacks = {
+    for s in local.custom_stacks : s.name => {
+      outputs = {
+        for output_key, flat_name in s.outputs :
+        output_key => lookup(local.custom_stacks_outputs, flat_name, "")
+      }
+    }
+  }
+
   # Key names below mirror the CloudFormation phone-home Lambda payload
   # so app templates referencing `nuon.install_stack.outputs.*` resolve
   # identically whether the customer applied via CFN or Terraform.
@@ -44,7 +54,7 @@ locals {
     break_glass_role_arns    = local.break_glass_role_arns
     custom_role_arns         = local.custom_role_arns
     install_inputs           = local.install_inputs
-    custom_nested_stacks     = {}
+    custom_nested_stacks     = local.custom_nested_stacks
     runner_enabled           = var.runner_enabled
   }, local.all_secret_arns)
 }
@@ -73,6 +83,7 @@ resource "stack_phone_home" "this" {
     aws_iam_role.custom,
     aws_secretsmanager_secret_version.auto_generate,
     aws_secretsmanager_secret_version.customer,
+    aws_cloudformation_stack.custom,
   ]
 
   install_id      = local.nuon_install_id
