@@ -128,18 +128,12 @@ locals {
   ))
   secrets = {
     for k in local.secret_names : k => {
-      # coalesce() errors on an all-null/empty argument list, so it is wrapped:
-      # a secret with no description anywhere must resolve to "", not blow up the
-      # locals block before the preconditions below can report the real problem.
       description = try(coalesce(var.secrets[k].description, data.stack_config.this.secrets[k].description), "")
       required    = try(var.secrets[k].required, null) != null ? var.secrets[k].required : try(data.stack_config.this.secrets[k].required, false)
       value       = try(var.secrets[k].value, "") != "" ? var.secrets[k].value : try(data.stack_config.this.secrets[k].value, "")
     }
   }
 
-  # A var.secrets key the app does not declare, mirroring unknown_input_keys:
-  # secrets.tf would send it to a secret store the vendor never reads, so the
-  # typo has to fail the plan. Names only — a key is not itself a secret value.
   unknown_secret_keys = nonsensitive(setsubtract(
     keys(nonsensitive(var.secrets)),
     keys(nonsensitive(data.stack_config.this.secrets)),
@@ -152,4 +146,19 @@ locals {
   missing_required_secrets = nonsensitive([
     for k, v in local.secrets : k if v.required && v.value == ""
   ])
+
+  custom_stacks_template_url = data.stack_config.this.custom_stacks_template_url
+  custom_stacks              = data.stack_config.this.custom_stacks
+
+  custom_stack_input_parameters = merge([
+    for s in local.custom_stacks : {
+      for cfn_param, input_name in s.input_parameters :
+      cfn_param => lookup(local.install_inputs, input_name, "")
+    }
+  ]...)
+
+  missing_custom_stack_input_names = tolist(setsubtract(
+    toset(flatten([for s in local.custom_stacks : values(s.input_parameters)])),
+    toset(keys(local.install_inputs)),
+  ))
 }

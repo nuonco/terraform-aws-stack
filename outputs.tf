@@ -67,7 +67,8 @@ output "custom_role_arns" {
 # Always present, even when no custom stacks are defined, so the shape matches
 # the CFN payload.
 output "custom_nested_stacks" {
-  value = {}
+  value       = local.custom_nested_stacks
+  description = "Map of custom stack name to its declared outputs, resolved from the stack's flat CloudFormation output names."
 }
 
 output "install_inputs" {
