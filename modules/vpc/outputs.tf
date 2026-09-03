@@ -37,3 +37,8 @@ output "nat_gateway_id" {
 output "internet_gateway_id" {
   value = aws_internet_gateway.main.id
 }
+
+output "dns_firewall_rule_group_id" {
+  value       = var.enable_dns_firewall ? aws_route53_resolver_firewall_rule_group.egress[0].id : ""
+  description = "Route 53 Resolver DNS Firewall rule group ID, empty when the firewall is disabled."
+}
