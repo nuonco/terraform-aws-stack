@@ -3,14 +3,18 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  # Span public + private subnets across 2 AZs so EKS (and other multi-AZ
-  # services the customer's components may provision) has the required AZ
-  # diversity. Runner stays single-AZ — it's a single ASG instance.
-  azs = slice(data.aws_availability_zones.available.names, 0, 2)
+  # Match aws-cloudformation-templates/vpc/eks/default: 3 AZs, CFN default CIDRs.
+  # Runner stays single-AZ — it's a single ASG instance.
+  azs = slice(data.aws_availability_zones.available.names, 0, 3)
+
+  vpc_cidr             = "10.128.0.0/16"
+  public_subnet_cidrs  = ["10.128.0.0/26", "10.128.0.64/26", "10.128.0.128/26"]
+  private_subnet_cidrs = ["10.128.130.0/24", "10.128.132.0/24", "10.128.134.0/24"]
+  runner_subnet_cidr   = "10.128.128.0/24"
 }
 
 resource "aws_vpc" "main" {
-  cidr_block           = "10.128.0.0/16"
+  cidr_block           = local.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags                 = merge(var.tags, { Name = "${var.prefix}-vpc" })
@@ -21,37 +25,14 @@ resource "aws_internet_gateway" "main" {
   tags   = merge(var.tags, { Name = "${var.prefix}-igw" })
 }
 
-# Migrate from the previous single-AZ layout (single `aws_subnet.public` /
-# `aws_subnet.private` resources) to the for_each layout. Without these,
-# Terraform plans a destroy+create that races on the existing CIDRs.
-moved {
-  from = aws_subnet.public
-  to   = aws_subnet.public[0]
-}
-
-moved {
-  from = aws_subnet.private
-  to   = aws_subnet.private[0]
-}
-
-moved {
-  from = aws_route_table_association.public
-  to   = aws_route_table_association.public[0]
-}
-
-moved {
-  from = aws_route_table_association.private
-  to   = aws_route_table_association.private[0]
-}
-
 resource "aws_subnet" "public" {
   count                   = length(local.azs)
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.128.${count.index * 16}.0/24"
+  cidr_block              = local.public_subnet_cidrs[count.index]
   availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
   tags = merge(var.tags, {
-    Name                     = "${var.prefix}-public-subnet-${count.index}"
+    Name                     = "${var.prefix}-public-subnet-az${count.index + 1}"
     visibility               = "public"
     "network.nuon.co/domain" = "public"
     "kubernetes.io/role/elb" = "1"
@@ -61,10 +42,10 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "private" {
   count             = length(local.azs)
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.128.${count.index * 16 + 1}.0/24"
+  cidr_block        = local.private_subnet_cidrs[count.index]
   availability_zone = local.azs[count.index]
   tags = merge(var.tags, {
-    Name                              = "${var.prefix}-private-subnet-${count.index}"
+    Name                              = "${var.prefix}-private-subnet-az${count.index + 1}"
     visibility                        = "private"
     "network.nuon.co/domain"          = "internal"
     "kubernetes.io/role/internal-elb" = "1"
@@ -73,10 +54,10 @@ resource "aws_subnet" "private" {
 
 resource "aws_subnet" "runner" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.128.2.0/24"
+  cidr_block        = local.runner_subnet_cidr
   availability_zone = local.azs[0]
   tags = merge(var.tags, {
-    Name                     = "${var.prefix}-runner-subnet"
+    Name                     = "${var.prefix}-private-runner-subnet-az1"
     visibility               = "private"
     "network.nuon.co/domain" = "runner"
   })

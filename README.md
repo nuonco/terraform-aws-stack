@@ -40,17 +40,20 @@ module "aws_stack" {
 
 ## Network topology
 
-| Network          | CIDR             | AZ        | Notes                                |
-| ---------------- | ---------------- | --------- | ------------------------------------ |
-| VPC              | `10.128.0.0/16`  | —         | DNS support + hostnames enabled      |
-| Public subnet A  | `10.128.0.0/24`  | AZ 0      | hosts the NAT Gateway; routes to IGW |
-| Public subnet B  | `10.128.16.0/24` | AZ 1      | routes to IGW                        |
-| Private subnet A | `10.128.1.0/24`  | AZ 0      | routes to NAT                        |
-| Private subnet B | `10.128.17.0/24` | AZ 1      | routes to NAT                        |
-| Runner subnet    | `10.128.2.0/24`  | AZ 0 only | shares the private route table       |
+| Network          | CIDR               | AZ        | Notes                                |
+| ---------------- | ------------------ | --------- | ------------------------------------ |
+| VPC              | `10.128.0.0/16`    | —         | DNS support + hostnames enabled      |
+| Public subnet A  | `10.128.0.0/26`    | AZ 0      | hosts the NAT Gateway; routes to IGW |
+| Public subnet B  | `10.128.0.64/26`   | AZ 1      | routes to IGW                        |
+| Public subnet C  | `10.128.0.128/26`  | AZ 2      | routes to IGW                        |
+| Private subnet A | `10.128.130.0/24`  | AZ 0      | routes to NAT                        |
+| Private subnet B | `10.128.132.0/24`  | AZ 1      | routes to NAT                        |
+| Private subnet C | `10.128.134.0/24`  | AZ 2      | routes to NAT                        |
+| Runner subnet    | `10.128.128.0/24`  | AZ 0 only | shares the private route table       |
 
-- Subnets are tagged `network.nuon.co/domain` = `public` / `internal` / `runner` and `visibility` = `public` / `private`, so downstream components (e.g. EKS, load balancers) can discover them.
-- There is a **single NAT Gateway** in public subnet A. Both private subnets and the runner subnet share one private route table, so AZ-B traffic crosses AZs to reach the NAT and there is no NAT redundancy.
+- Layout matches `aws-cloudformation-templates/vpc/eks/default`.
+- Subnets are tagged `network.nuon.co/domain` = `public` / `internal` / `runner` and `visibility` = `public` / `private`. Public subnets also get `kubernetes.io/role/elb=1`; private subnets get `kubernetes.io/role/internal-elb=1`, so the AWS Load Balancer Controller can discover them.
+- There is a **single NAT Gateway** in public subnet A. Private subnets and the runner subnet share one private route table, so AZ-B and AZ-C traffic crosses AZs to reach the NAT and there is no NAT redundancy.
 - The VPC module gates its `runner_subnet_id` output on the runner route-table association, so the runner instance cannot boot before its default route to the NAT exists.
 - The runner requires no inbound connectivity; for the outbound destinations it must reach, see [Runners](https://docs.nuon.co/concepts/runners).
 
