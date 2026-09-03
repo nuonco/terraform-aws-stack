@@ -54,6 +54,7 @@ resource "aws_subnet" "public" {
     Name                     = "${var.prefix}-public-subnet-${count.index}"
     visibility               = "public"
     "network.nuon.co/domain" = "public"
+    "kubernetes.io/role/elb" = "1"
   })
 }
 
@@ -63,9 +64,10 @@ resource "aws_subnet" "private" {
   cidr_block        = "10.128.${count.index * 16 + 1}.0/24"
   availability_zone = local.azs[count.index]
   tags = merge(var.tags, {
-    Name                     = "${var.prefix}-private-subnet-${count.index}"
-    visibility               = "private"
-    "network.nuon.co/domain" = "internal"
+    Name                              = "${var.prefix}-private-subnet-${count.index}"
+    visibility                        = "private"
+    "network.nuon.co/domain"          = "internal"
+    "kubernetes.io/role/internal-elb" = "1"
   })
 }
 
