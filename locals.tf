@@ -82,5 +82,7 @@ locals {
   tags = {
     "install.nuon.co/id" = local.nuon_install_id
     "nuon_install_id"    = local.nuon_install_id
+    "org.nuon.co/id"     = local.nuon_org_id
+    "app.nuon.co/id"     = local.nuon_app_id
   }
 }
