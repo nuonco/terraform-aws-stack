@@ -1,8 +1,10 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  prefix = local.prefix
-  tags   = local.tags
+  prefix                 = local.prefix
+  tags                   = local.tags
+  enable_dns_firewall    = var.enable_dns_firewall
+  egress_allowed_domains = var.egress_allowed_domains
 }
 
 module "runner" {

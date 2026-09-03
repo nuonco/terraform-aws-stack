@@ -96,3 +96,8 @@ output "runner_security_group_id" {
 output "runner_enabled" {
   value = var.runner_enabled
 }
+
+output "dns_firewall_rule_group_id" {
+  value       = module.vpc.dns_firewall_rule_group_id
+  description = "Route 53 Resolver DNS Firewall rule group ID, empty when the firewall is disabled."
+}

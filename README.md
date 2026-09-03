@@ -54,6 +54,7 @@ module "aws_stack" {
 - Layout matches `aws-cloudformation-templates/vpc/eks/default`.
 - Subnets are tagged `network.nuon.co/domain` = `public` / `internal` / `runner` and `visibility` = `public` / `private`. Public subnets also get `kubernetes.io/role/elb=1`; private subnets get `kubernetes.io/role/internal-elb=1`, so the AWS Load Balancer Controller can discover them.
 - There is a **single NAT Gateway** in public subnet A. Private subnets and the runner subnet share one private route table, so AZ-B and AZ-C traffic crosses AZs to reach the NAT and there is no NAT redundancy.
+- Optional Route 53 Resolver DNS Firewall (`enable_dns_firewall`, default off) blocks outbound DNS except `egress_allowed_domains`.
 - The VPC module gates its `runner_subnet_id` output on the runner route-table association, so the runner instance cannot boot before its default route to the NAT exists.
 - The runner requires no inbound connectivity; for the outbound destinations it must reach, see [Runners](https://docs.nuon.co/concepts/runners).
 

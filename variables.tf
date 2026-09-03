@@ -45,6 +45,18 @@ variable "secrets" {
   description = "Secret overrides keyed by name, layered over the stack_config data source. Any field set here wins. Use this to supply secret values the control plane does not hold. A secret the app declares required fails the plan if it resolves to no value, as does a key naming a secret the app does not declare."
 }
 
+variable "enable_dns_firewall" {
+  type        = bool
+  default     = false
+  description = "Enable Route 53 Resolver DNS Firewall on the install VPC. When true, outbound DNS is blocked unless listed in egress_allowed_domains. Matches EnableFirewall on the CloudFormation VPC template; default off."
+}
+
+variable "egress_allowed_domains" {
+  type        = list(string)
+  default     = []
+  description = "Domains allowed through the DNS firewall (e.g. [\"api.nuon.co\", \".nuon.co\"]). Ignored unless enable_dns_firewall is true."
+}
+
 variable "roles" {
   type        = map(bool)
   default     = {}
