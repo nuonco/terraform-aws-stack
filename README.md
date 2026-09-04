@@ -58,6 +58,12 @@ module "aws_stack" {
 - The VPC module gates its `runner_subnet_id` output on the runner route-table association, so the runner instance cannot boot before its default route to the NAT exists.
 - The runner requires no inbound connectivity; for the outbound destinations it must reach, see [Runners](https://docs.nuon.co/concepts/runners).
 
+## Custom stacks
+
+When the app declares custom stacks, this module applies the control-plane-generated CloudFormation template after the VPC and runner. Inputs and outputs use the same `custom_nested_stacks.<name>.outputs` contract as the CloudFormation install path.
+
+If `custom_stacks_template_url` is empty, the custom-stack resource is a no-op and the rest of the install stack is unchanged.
+
 ## Runner authentication
 
 On AWS, the Nuon runner authenticates using an Instance Identity Document (IID). The runner proves its identity to the control plane using the EC2 instance identity. For this reason, the region and account ID must be provided up-front when creating an install on AWS.

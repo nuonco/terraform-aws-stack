@@ -9,6 +9,7 @@ resource "aws_cloudformation_stack" "custom" {
   parameters = merge(
     {
       VPC            = module.vpc.vpc_id
+      CIDRBlock      = module.vpc.vpc_cidr
       RunnerSubnet   = module.vpc.runner_subnet_id
       PublicSubnets  = join(",", module.vpc.public_subnet_ids)
       PrivateSubnets = join(",", module.vpc.private_subnet_ids)
