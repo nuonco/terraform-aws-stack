@@ -11,19 +11,19 @@ output "region" {
 }
 
 output "vpc_id" {
-  value = module.vpc.vpc_id
+  value = local.network.vpc_id
 }
 
 output "runner_subnet" {
-  value = module.vpc.runner_subnet_id
+  value = local.network.runner_subnet_id
 }
 
 output "public_subnets" {
-  value = module.vpc.public_subnet_ids
+  value = local.network.public_subnet_ids
 }
 
 output "private_subnets" {
-  value = module.vpc.private_subnet_ids
+  value = local.network.private_subnet_ids
 }
 
 output "runner_iam_role_arn" {
@@ -90,7 +90,7 @@ output "secret_arns" {
 
 # Convenience: not in the CFN payload, but useful for debugging.
 output "runner_security_group_id" {
-  value = module.vpc.runner_security_group_id
+  value = local.network.runner_security_group_id
 }
 
 output "runner_enabled" {
@@ -98,6 +98,6 @@ output "runner_enabled" {
 }
 
 output "dns_firewall_rule_group_id" {
-  value       = module.vpc.dns_firewall_rule_group_id
+  value       = local.network.dns_firewall_rule_group_id
   description = "Route 53 Resolver DNS Firewall rule group ID, empty when the firewall is disabled."
 }

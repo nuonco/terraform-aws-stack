@@ -34,6 +34,8 @@ locals {
 
   region = data.stack_config.this.aws.region
 
+  vpc_nested_template_url = data.stack_config.this.aws.vpc_nested_template_url
+
   # Caller override wins; then the Nuon app runner config; then the platform
   # default, which also covers a ctl-api that does not yet serve the field.
   runner_machine_type = (

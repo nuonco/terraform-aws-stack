@@ -1,5 +1,6 @@
 module "vpc" {
   source = "./modules/vpc"
+  count  = local.vpc_nested_template_url != "" ? 0 : 1
 
   prefix                 = local.prefix
   tags                   = local.tags
@@ -14,13 +15,13 @@ module "runner" {
   # The instance needs egress the moment user_data runs, but the NAT gateway
   # and the runner subnet's route association don't feed any output the runner
   # module consumes, so nothing orders them ahead of the ASG implicitly.
-  depends_on = [module.vpc]
+  depends_on = [module.vpc, aws_cloudformation_stack.vpc]
 
   prefix                       = local.prefix
   tags                         = local.tags
-  vpc_id                       = module.vpc.vpc_id
-  runner_subnet_id             = module.vpc.runner_subnet_id
-  runner_security_group        = module.vpc.runner_security_group_id
+  vpc_id                       = local.network.vpc_id
+  runner_subnet_id             = local.network.runner_subnet_id
+  runner_security_group        = local.network.runner_security_group_id
   runner_instance_profile_name = aws_iam_instance_profile.runner.name
   runner_api_url               = local.runner_api_url
   runner_id                    = local.runner_id
