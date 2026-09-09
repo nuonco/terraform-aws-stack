@@ -58,6 +58,12 @@ module "aws_stack" {
 - The VPC module gates its `runner_subnet_id` output on the runner route-table association, so the runner instance cannot boot before its default route to the NAT exists.
 - The runner requires no inbound connectivity; for the outbound destinations it must reach, see [Runners](https://docs.nuon.co/concepts/runners).
 
+### Vendor VPC template
+
+When the app config sets `vpc_nested_template_url`, the module deploys that CloudFormation template as `<install-id>-vpc` instead of building the topology above, and reads `VPC`, `VpcCidrBlock`, `PublicSubnets`, `PrivateSubnets`, `RunnerSubnet`, `SecurityGroupId` and `DnsFirewallRuleGroupId` back off it. Everything downstream — IAM, secrets, runner, custom stacks, phone home — is unchanged.
+
+A customised template usually declares resources beyond the reference topology that the vendor's own components then look up by tag. Building this module's VPC in that case would leave those lookups unresolvable, so the same template runs on the CloudFormation and Terraform paths. `enable_dns_firewall` and `egress_allowed_domains` are passed through as `EnableFirewall` and `EgressAllowedDomains`; the template supplies its own CIDR defaults.
+
 ## Custom stacks
 
 When the app declares custom stacks, this module applies the control-plane-generated CloudFormation template after the VPC and runner. Inputs and outputs use the same `custom_nested_stacks.<name>.outputs` contract as the CloudFormation install path.

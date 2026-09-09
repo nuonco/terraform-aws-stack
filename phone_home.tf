@@ -32,7 +32,7 @@ locals {
   phone_home_payload = merge({
     account_id = data.aws_caller_identity.current.account_id
     region     = local.region
-    vpc_id     = module.vpc.vpc_id
+    vpc_id     = local.network.vpc_id
     # Subnet lists are emitted as comma-joined strings to match the CFN
     # phone-home Lambda payload (CFN stack outputs are strings, joined with
     # `Fn::Join`). ctl-api's `updateinstallstackoutputs` decoder uses
@@ -40,10 +40,10 @@ locals {
     # downstream stack outputs end up as proper lists either way. Sending an
     # actual JSON list here would land in postgres HSTORE as the string
     # "[subnet-x subnet-y]" (space-separated) and decode to an empty list.
-    runner_subnet            = module.vpc.runner_subnet_id
-    public_subnets           = join(",", module.vpc.public_subnet_ids)
-    private_subnets          = join(",", module.vpc.private_subnet_ids)
-    runner_security_group_id = module.vpc.runner_security_group_id
+    runner_subnet            = local.network.runner_subnet_id
+    public_subnets           = join(",", local.network.public_subnet_ids)
+    private_subnets          = join(",", local.network.private_subnet_ids)
+    runner_security_group_id = local.network.runner_security_group_id
     runner_iam_role_arn      = aws_iam_role.runner.arn
     runner_instance_profile  = aws_iam_instance_profile.runner.arn
     runner_asg_name          = local.runner_asg_name
@@ -74,6 +74,7 @@ locals {
 resource "stack_phone_home" "this" {
   depends_on = [
     module.vpc,
+    aws_cloudformation_stack.vpc,
     module.runner,
     aws_iam_role.runner,
     aws_iam_role.provision,
@@ -89,6 +90,10 @@ resource "stack_phone_home" "this" {
   install_id      = local.nuon_install_id
   phone_home_url  = local.phone_home_url
   phone_home_type = "aws"
+
+  # Not part of the report: the authenticated phone-home URL is the same for
+  # every version, so this is what makes a newly generated one show as a diff.
+  stack_version_id = data.stack_config.this.stack_version_id
 
   payload = jsonencode(local.phone_home_payload)
 
