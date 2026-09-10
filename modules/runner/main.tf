@@ -91,13 +91,22 @@ resource "aws_autoscaling_group" "runner" {
   desired_capacity    = 1
   vpc_zone_identifier = [var.runner_subnet_id]
 
+  # Pinned to the resolved version, not $Latest: with $Latest a new template
+  # version leaves this resource unchanged, so terraform never starts the
+  # instance refresh below and a running runner keeps the old config.
   launch_template {
     id      = aws_launch_template.runner.id
-    version = "$Latest"
+    version = aws_launch_template.runner.latest_version
   }
 
+  # The group is a single instance, so it has to drop to zero healthy to
+  # replace it; the 90% default can never be satisfied here.
   instance_refresh {
     strategy = "Rolling"
+
+    preferences {
+      min_healthy_percentage = 0
+    }
   }
 
   # ASGs ignore the launch template's tag_specifications when launching
