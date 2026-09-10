@@ -20,6 +20,37 @@ resource "aws_cloudformation_stack" "vpc" {
   tags = local.tags
 }
 
+# CloudFormation always builds this security group itself rather than reusing one
+# from the vendor's VPC template, because sandboxes discover the runner group by
+# the network.nuon.co/domain tag to allow it through to the cluster. Reusing the
+# vendor's untagged group leaves them unable to find it.
+resource "aws_security_group" "runner_from_template" {
+  count = local.vpc_from_template ? 1 : 0
+
+  name        = "${local.prefix}-runner-sg"
+  description = "Nuon runner security group for ${local.prefix}"
+  vpc_id      = lookup(local.vpc_template_outputs, "VPC", "")
+
+  tags = merge(local.tags, {
+    Name                     = "${local.prefix}-runner-sg"
+    "network.nuon.co/domain" = "runner"
+  })
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    self      = true
+  }
+}
+
 locals {
   vpc_from_template = length(aws_cloudformation_stack.vpc) > 0
 
@@ -40,7 +71,7 @@ locals {
     public_subnet_ids          = split(",", lookup(local.vpc_template_outputs, "PublicSubnets", ""))
     private_subnet_ids         = split(",", lookup(local.vpc_template_outputs, "PrivateSubnets", ""))
     runner_subnet_id           = lookup(local.vpc_template_outputs, "RunnerSubnet", "")
-    runner_security_group_id   = lookup(local.vpc_template_outputs, "SecurityGroupId", "")
+    runner_security_group_id   = one(aws_security_group.runner_from_template[*].id)
     dns_firewall_rule_group_id = lookup(local.vpc_template_outputs, "DnsFirewallRuleGroupId", "")
     } : {
     vpc_id                     = one(module.vpc[*].vpc_id)
