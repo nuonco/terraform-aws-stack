@@ -24,6 +24,18 @@ variable "runner_security_group" {
   description = "Security group ID attached to runner instances."
 }
 
+variable "additional_security_group_ids" {
+  type        = list(string)
+  default     = []
+  description = "Additional security group IDs attached to runner instances."
+}
+
+variable "target_group_arns" {
+  type        = list(string)
+  default     = []
+  description = "Target groups registered with the runner ASG."
+}
+
 variable "runner_instance_profile_name" {
   type        = string
   description = "Name of the IAM instance profile attached to runner instances."

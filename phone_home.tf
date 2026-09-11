@@ -56,6 +56,7 @@ locals {
     install_inputs           = local.install_inputs
     custom_nested_stacks     = local.custom_nested_stacks
     runner_enabled           = var.runner_enabled
+    telemetry_endpoint       = local.telemetry_endpoint
   }, local.all_secret_arns)
 }
 
@@ -76,6 +77,11 @@ resource "stack_phone_home" "this" {
     module.vpc,
     aws_cloudformation_stack.vpc,
     module.runner,
+    aws_lb.telemetry,
+    aws_lb_listener.telemetry,
+    aws_vpc_security_group_ingress_rule.telemetry_load_balancer,
+    aws_vpc_security_group_egress_rule.telemetry_load_balancer,
+    aws_vpc_security_group_ingress_rule.telemetry_receiver,
     aws_iam_role.runner,
     aws_iam_role.provision,
     aws_iam_role.maintenance,

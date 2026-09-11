@@ -30,6 +30,11 @@ output "runner_security_group_id" {
   value = aws_security_group.runner.id
 }
 
+output "vpc_ipv4_prefix_list_id" {
+  value       = aws_ec2_managed_prefix_list.vpc_ipv4.id
+  description = "Managed prefix list containing the VPC IPv4 CIDR."
+}
+
 output "nat_gateway_id" {
   value = aws_nat_gateway.main.id
 }

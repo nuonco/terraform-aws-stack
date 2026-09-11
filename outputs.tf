@@ -97,6 +97,11 @@ output "runner_enabled" {
   value = var.runner_enabled
 }
 
+output "telemetry_endpoint" {
+  value       = local.telemetry_endpoint
+  description = "Private OTLP/HTTP endpoint; empty when telemetry ingress or the runner is disabled."
+}
+
 output "dns_firewall_rule_group_id" {
   value       = local.network.dns_firewall_rule_group_id
   description = "Route 53 Resolver DNS Firewall rule group ID, empty when the firewall is disabled."
