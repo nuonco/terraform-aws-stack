@@ -137,3 +137,14 @@ resource "aws_security_group" "runner" {
     self      = true
   }
 }
+
+resource "aws_ec2_managed_prefix_list" "vpc_ipv4" {
+  name           = "${var.prefix}-vpc-ipv4"
+  address_family = "IPv4"
+  max_entries    = 1
+  tags           = var.tags
+
+  entry {
+    cidr = aws_vpc.main.cidr_block
+  }
+}

@@ -60,9 +60,15 @@ module "aws_stack" {
 
 ### Vendor VPC template
 
-When the app config sets `vpc_nested_template_url`, the module deploys that CloudFormation template as `<install-id>-vpc` instead of building the topology above, and reads `VPC`, `VpcCidrBlock`, `PublicSubnets`, `PrivateSubnets`, `RunnerSubnet`, `SecurityGroupId` and `DnsFirewallRuleGroupId` back off it. Everything downstream — IAM, secrets, runner, custom stacks, phone home — is unchanged.
+When the app config sets `vpc_nested_template_url`, the module deploys that CloudFormation template as `<install-id>-vpc` instead of building the topology above, and reads `VPC`, `VpcCidrBlock`, `VpcIpv4PrefixListId`, `PublicSubnets`, `PrivateSubnets`, `RunnerSubnet`, `SecurityGroupId` and `DnsFirewallRuleGroupId` back off it. With telemetry ingress enabled, `VpcIpv4PrefixListId` is required and must identify the allowed VPC IPv4 ranges; update older templates to provide it or set `enable_telemetry_ingress = false`. The module fails rather than silently broadening access when this output is absent. Everything downstream — IAM, secrets, runner, custom stacks, phone home — is unchanged.
 
 A customised template usually declares resources beyond the reference topology that the vendor's own components then look up by tag. Building this module's VPC in that case would leave those lookups unresolvable, so the same template runs on the CloudFormation and Terraform paths. `enable_dns_firewall` and `egress_allowed_domains` are passed through as `EnableFirewall` and `EgressAllowedDomains`; the template supplies its own CIDR defaults.
+
+## Private telemetry ingress
+
+A private OTLP/HTTP network load balancer on port 4318 is created by default when `runner_enabled = true`. Set `enable_telemetry_ingress = false` to opt out. Nuon's install telemetry setting must also be enabled for collection. Access is restricted to the VPC's managed IPv4 prefix list; the endpoint uses plaintext HTTP without authentication. Enabling or disabling ingress changes the runner launch template's security groups and triggers the runner ASG's rolling instance refresh (the single runner is replaced with `min_healthy_percentage = 0`).
+
+Use `module.aws_stack.telemetry_endpoint`, or `{{ .nuon.install_stack.outputs.telemetry_endpoint }}` in Nuon app components, as `OTEL_EXPORTER_OTLP_ENDPOINT` with protocol `http/protobuf`. The URL is stable across runner replacements and empty when ingress or the runner is disabled.
 
 ## Custom stacks
 

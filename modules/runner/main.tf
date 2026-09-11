@@ -67,7 +67,7 @@ resource "aws_launch_template" "runner" {
 
   network_interfaces {
     associate_public_ip_address = false
-    security_groups             = [var.runner_security_group]
+    security_groups             = concat([var.runner_security_group], var.additional_security_group_ids)
   }
 
   block_device_mappings {
@@ -90,6 +90,7 @@ resource "aws_autoscaling_group" "runner" {
   max_size            = 1
   desired_capacity    = 1
   vpc_zone_identifier = [var.runner_subnet_id]
+  target_group_arns   = var.target_group_arns
 
   # Pinned to the resolved version, not $Latest: with $Latest a new template
   # version leaves this resource unchanged, so terraform never starts the
