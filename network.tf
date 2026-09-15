@@ -52,23 +52,21 @@ resource "aws_security_group" "runner_from_template" {
   }
 }
 
+data "aws_vpc" "from_template" {
+  count = local.vpc_from_template ? 1 : 0
+  id    = lookup(local.vpc_template_outputs, "VPC", "")
+}
+
 locals {
   vpc_from_template = length(aws_cloudformation_stack.vpc) > 0
 
   vpc_template_outputs = local.vpc_from_template ? aws_cloudformation_stack.vpc[0].outputs : {}
 
-  # The reference template renamed this output; accept either spelling so the
-  # module works against both.
-  vpc_template_cidr = local.vpc_from_template ? coalesce(
-    lookup(local.vpc_template_outputs, "VpcCidrBlock", ""),
-    lookup(local.vpc_template_outputs, "CIDRBlock", ""),
-  ) : ""
-
   # Single indirection for the rest of the module, so nothing else needs to know
   # which of the two built the network.
   network = local.vpc_from_template ? {
     vpc_id                     = lookup(local.vpc_template_outputs, "VPC", "")
-    vpc_cidr                   = local.vpc_template_cidr
+    vpc_cidr                   = one(data.aws_vpc.from_template[*].cidr_block)
     public_subnet_ids          = split(",", lookup(local.vpc_template_outputs, "PublicSubnets", ""))
     private_subnet_ids         = split(",", lookup(local.vpc_template_outputs, "PrivateSubnets", ""))
     runner_subnet_id           = lookup(local.vpc_template_outputs, "RunnerSubnet", "")
