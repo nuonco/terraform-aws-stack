@@ -10,6 +10,7 @@ resource "aws_cloudformation_stack" "vpc" {
   capabilities = ["CAPABILITY_IAM", "CAPABILITY_NAMED_IAM", "CAPABILITY_AUTO_EXPAND"]
 
   parameters = {
+    ClusterName          = local.nuon_install_id
     NuonInstallID        = local.nuon_install_id
     NuonOrgID            = local.nuon_org_id
     NuonAppID            = local.nuon_app_id
