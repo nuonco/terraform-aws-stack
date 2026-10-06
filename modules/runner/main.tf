@@ -1,4 +1,5 @@
 data "aws_ami" "al2023" {
+  region      = var.region
   most_recent = true
   owners      = ["amazon"]
 
@@ -14,6 +15,7 @@ data "aws_ami" "al2023" {
 }
 
 resource "aws_cloudwatch_log_group" "runner" {
+  region            = var.region
   name              = "/nuon/${var.nuon_install_id}/runner"
   retention_in_days = 30
   tags              = var.tags
@@ -51,6 +53,7 @@ locals {
 }
 
 resource "aws_launch_template" "runner" {
+  region        = var.region
   name_prefix   = "${var.prefix}-runner-"
   image_id      = data.aws_ami.al2023.id
   instance_type = var.instance_type
@@ -85,6 +88,7 @@ resource "aws_launch_template" "runner" {
 }
 
 resource "aws_autoscaling_group" "runner" {
+  region              = var.region
   name                = "${var.prefix}-runner-asg"
   min_size            = 1
   max_size            = 1

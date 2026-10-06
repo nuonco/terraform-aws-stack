@@ -2,6 +2,7 @@ module "vpc" {
   source = "./modules/vpc"
   count  = local.vpc_nested_template_url != "" ? 0 : 1
 
+  region                 = var.region
   prefix                 = local.prefix
   tags                   = local.tags
   enable_dns_firewall    = var.enable_dns_firewall
@@ -18,6 +19,7 @@ module "runner" {
   # Register the ASG only after the target group is attached to its listener.
   depends_on = [module.vpc, aws_cloudformation_stack.vpc, aws_lb_listener.telemetry]
 
+  region                        = var.region
   prefix                        = local.prefix
   tags                          = local.tags
   vpc_id                        = local.network.vpc_id

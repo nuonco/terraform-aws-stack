@@ -34,6 +34,41 @@ module "aws_stack" {
 }
 ```
 
+### Installs in several regions
+
+By default the stack is created in the `aws` provider's region. Set `region` to
+create it somewhere else, which lets one `aws` provider provision installs in
+different regions, for example with `for_each`:
+
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
+provider "stack" {}
+
+module "aws_stack" {
+  source   = "nuonco/stack/aws"
+  version  = "~> 1.5"
+  for_each = var.installs # install ID => region
+
+  install_id = each.key
+  region     = each.value
+}
+```
+
+`region` should match the install's region in Nuon: a plan warns when they differ.
+IAM resources are global and are unaffected.
+
+## Testing
+
+`tests/` runs against mock providers, so it needs no AWS credentials or Nuon API:
+
+```bash
+terraform init -backend=false
+terraform test
+```
+
 ## Architecture
 
 ![AWS install stack architecture](https://raw.githubusercontent.com/nuonco/terraform-aws-stack/main/docs/architecture.svg)

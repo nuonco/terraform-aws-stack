@@ -1,6 +1,7 @@
 resource "aws_cloudformation_stack" "custom" {
   count = local.custom_stacks_template_url != "" ? 1 : 0
 
+  region       = var.region
   name         = "${local.prefix}-custom-stacks"
   template_url = local.custom_stacks_template_url
 
