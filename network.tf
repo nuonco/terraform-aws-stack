@@ -4,6 +4,7 @@
 resource "aws_cloudformation_stack" "vpc" {
   count = local.vpc_nested_template_url != "" ? 1 : 0
 
+  region       = var.region
   name         = "${local.prefix}-vpc"
   template_url = local.vpc_nested_template_url
 
@@ -29,6 +30,7 @@ resource "aws_cloudformation_stack" "vpc" {
 resource "aws_security_group" "runner_from_template" {
   count = local.vpc_from_template ? 1 : 0
 
+  region      = var.region
   name        = "${local.prefix}-runner-sg"
   description = "Nuon runner security group for ${local.prefix}"
   vpc_id      = lookup(local.vpc_template_outputs, "VPC", "")
@@ -54,8 +56,9 @@ resource "aws_security_group" "runner_from_template" {
 }
 
 data "aws_vpc" "from_template" {
-  count = local.vpc_from_template ? 1 : 0
-  id    = lookup(local.vpc_template_outputs, "VPC", "")
+  count  = local.vpc_from_template ? 1 : 0
+  region = var.region
+  id     = lookup(local.vpc_template_outputs, "VPC", "")
 }
 
 locals {

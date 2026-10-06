@@ -15,12 +15,14 @@ resource "random_password" "auto_generate" {
 
 resource "aws_secretsmanager_secret" "auto_generate" {
   for_each = toset(local.auto_generate_secrets)
+  region   = var.region
   name     = "${local.prefix}-${each.key}"
   tags     = local.tags
 }
 
 resource "aws_secretsmanager_secret_version" "auto_generate" {
   for_each      = toset(local.auto_generate_secrets)
+  region        = var.region
   secret_id     = aws_secretsmanager_secret.auto_generate[each.key].id
   secret_string = random_password.auto_generate[each.key].result
 
@@ -41,12 +43,14 @@ locals {
 
 resource "aws_secretsmanager_secret" "customer" {
   for_each = local.customer_secret_keys
+  region   = var.region
   name     = "${local.prefix}-${each.key}"
   tags     = local.tags
 }
 
 resource "aws_secretsmanager_secret_version" "customer" {
   for_each      = local.customer_secret_keys
+  region        = var.region
   secret_id     = aws_secretsmanager_secret.customer[each.key].id
   secret_string = local.secrets[each.key].value
 
@@ -60,6 +64,7 @@ resource "aws_secretsmanager_secret_version" "customer" {
 ###############################################################################
 
 resource "aws_secretsmanager_secret" "telemetry_export_config" {
+  region                  = var.region
   name                    = "nuon/${local.nuon_install_id}/telemetry-export-config"
   recovery_window_in_days = 0
   tags                    = local.tags

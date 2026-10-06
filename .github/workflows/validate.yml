@@ -41,3 +41,21 @@ jobs:
       - name: terraform validate
         working-directory: ${{ matrix.dir }}
         run: terraform validate
+
+  # terraform test needs mock providers (1.7+); validate above stays on the
+  # oldest version the module supports.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: terraform init
+        run: terraform init -backend=false -input=false
+
+      - name: terraform test
+        run: terraform test

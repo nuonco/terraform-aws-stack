@@ -16,6 +16,17 @@ variable "install_id" {
   }
 }
 
+variable "region" {
+  type        = string
+  default     = null
+  description = "AWS region to create the stack's regional resources in. Defaults to the aws provider's region. Set it to provision installs in several regions from one aws provider, for example with for_each over installs passing each install's region. It should match the install's region in the Nuon control plane (see checks.tf)."
+
+  validation {
+    condition     = var.region == null || can(regex("^[a-z]{2}(-[a-z]+)+-[0-9]+$", var.region))
+    error_message = "region must be an AWS region name such as us-west-2, or null to use the aws provider's region."
+  }
+}
+
 variable "runner_enabled" {
   type        = bool
   default     = true

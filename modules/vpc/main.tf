@@ -1,5 +1,6 @@
 data "aws_availability_zones" "available" {
-  state = "available"
+  region = var.region
+  state  = "available"
 }
 
 locals {
@@ -14,6 +15,7 @@ locals {
 }
 
 resource "aws_vpc" "main" {
+  region               = var.region
   cidr_block           = local.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -21,12 +23,14 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_internet_gateway" "main" {
+  region = var.region
   vpc_id = aws_vpc.main.id
   tags   = merge(var.tags, { Name = "${var.prefix}-igw" })
 }
 
 resource "aws_subnet" "public" {
   count                   = length(local.azs)
+  region                  = var.region
   vpc_id                  = aws_vpc.main.id
   cidr_block              = local.public_subnet_cidrs[count.index]
   availability_zone       = local.azs[count.index]
@@ -41,6 +45,7 @@ resource "aws_subnet" "public" {
 
 resource "aws_subnet" "private" {
   count             = length(local.azs)
+  region            = var.region
   vpc_id            = aws_vpc.main.id
   cidr_block        = local.private_subnet_cidrs[count.index]
   availability_zone = local.azs[count.index]
@@ -53,6 +58,7 @@ resource "aws_subnet" "private" {
 }
 
 resource "aws_subnet" "runner" {
+  region            = var.region
   vpc_id            = aws_vpc.main.id
   cidr_block        = local.runner_subnet_cidr
   availability_zone = local.azs[0]
@@ -64,11 +70,13 @@ resource "aws_subnet" "runner" {
 }
 
 resource "aws_eip" "nat" {
+  region = var.region
   domain = "vpc"
   tags   = merge(var.tags, { Name = "${var.prefix}-nat-eip" })
 }
 
 resource "aws_nat_gateway" "main" {
+  region        = var.region
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
 
@@ -78,6 +86,7 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_route_table" "public" {
+  region = var.region
   vpc_id = aws_vpc.main.id
   tags   = merge(var.tags, { Name = "${var.prefix}-public-rt" })
 
@@ -88,6 +97,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
+  region = var.region
   vpc_id = aws_vpc.main.id
   tags   = merge(var.tags, { Name = "${var.prefix}-private-rt" })
 
@@ -99,22 +109,26 @@ resource "aws_route_table" "private" {
 
 resource "aws_route_table_association" "public" {
   count          = length(aws_subnet.public)
+  region         = var.region
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table_association" "private" {
   count          = length(aws_subnet.private)
+  region         = var.region
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
 
 resource "aws_route_table_association" "runner" {
+  region         = var.region
   subnet_id      = aws_subnet.runner.id
   route_table_id = aws_route_table.private.id
 }
 
 resource "aws_security_group" "runner" {
+  region      = var.region
   name        = "${var.prefix}-runner-sg"
   description = "Nuon runner security group for ${var.prefix}"
   vpc_id      = aws_vpc.main.id
@@ -139,6 +153,7 @@ resource "aws_security_group" "runner" {
 }
 
 resource "aws_ec2_managed_prefix_list" "vpc_ipv4" {
+  region         = var.region
   name           = "${var.prefix}-vpc-ipv4"
   address_family = "IPv4"
   max_entries    = 1

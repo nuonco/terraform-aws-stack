@@ -3,6 +3,12 @@ variable "prefix" {
   description = "Resource name prefix (typically the Nuon install ID)."
 }
 
+variable "region" {
+  type        = string
+  default     = null
+  description = "AWS region to create resources in. Defaults to the aws provider's region."
+}
+
 variable "tags" {
   type        = map(string)
   default     = {}
